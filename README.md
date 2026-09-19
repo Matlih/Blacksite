@@ -1,15 +1,15 @@
 <div align="center">
-  <img src="public/app_logo.png" alt="Blacksite Node Logo" width="150"/>
+  <img src="public/app_logo.png" alt="BLACKSITE Logo" width="150"/>
   
-  <h1>BLACKSITE NODE</h1>
+  <h1>BLACKSITE</h1>
   <h3>Sovereign Offline Password Manager & Secure Notepad</h3>
 </div>
 
 ```
 CLASSIFICATION : PERSONAL SECURITY INFRASTRUCTURE
-ARCHITECTURE   : Tauri v2 · Rust · React · TypeScript · Vite · TailwindCSS
-CIPHER SUITE   : Argon2id · ChaCha20-Poly1305 · OsRng CSPRNG
-STORAGE        : Single encrypted .blacksite file — zero cloud, zero sync, zero trust
+ARCHITECTURE   : Tauri v2 Â· Rust Â· React Â· TypeScript Â· Vite Â· TailwindCSS
+CIPHER SUITE   : Argon2id Â· ChaCha20-Poly1305 Â· OsRng CSPRNG
+STORAGE        : Single encrypted .blacksite file â€” zero cloud, zero sync, zero trust
 VERSION        : v2.0.0
 ```
 
@@ -21,29 +21,29 @@ VERSION        : v2.0.0
 </div>
 
 <div align="center">
-  <h2>100% Free, Open Source Software</h2>
-  <p><b>Blacksite Node is forever free. No subscriptions. No telemetry. Zero clouds.</b></p>
+  <h2>Source-Available Software (SAS)</h2>
+  <p><b>Blacksite is Source-Available Software (SAS). No subscriptions. No telemetry. Zero clouds.</b></p>
 </div>
 
 <p align="center">
-  <a href="https://github.com/Matlih/Blacksite-Node/releases">Releases</a> •
-  <a href="#features-overview">Features</a> •
-  <a href="#i-the-architecture">Architecture</a> •
-  <a href="#ii-core-protocols">Protocols</a> •
-  <a href="#iii-the-cryptographic-math">Cryptography</a> •
-  <a href="#iv-machine-learning-engine">Machine Learning</a> •
-  <a href="#v-build-instructions">Build Instructions</a> •
+  <a href="https://github.com/Matlih/Blacksite-Node/releases">Releases</a> â€¢
+  <a href="#features-overview">Features</a> â€¢
+  <a href="#i-the-architecture">Architecture</a> â€¢
+  <a href="#ii-core-protocols">Protocols</a> â€¢
+  <a href="#iii-the-cryptographic-math">Cryptography</a> â€¢
+  <a href="#iv-machine-learning-engine">Machine Learning</a> â€¢
+  <a href="#v-build-instructions">Build Instructions</a> â€¢
   <a href="#vii-distribution--deployment">Deployment</a>
 </p>
 
 <br>
 
 <div align="center">
-  <img src="public/ui_password.PNG" alt="Blacksite Node Vault Interface (Password)" width="850"/>
+  <img src="public/ui_password.PNG" alt="BLACKSITE Vault Interface (Password)" width="850"/>
 </div>
 
 <div align="center">
-  <img src="public/ui_notepad.PNG" alt="Blacksite Node Vault Interface (Notepad)" width="850"/>
+  <img src="public/ui_notepad.PNG" alt="BLACKSITE Vault Interface (Notepad)" width="850"/>
 </div>
 
 ---
@@ -72,25 +72,25 @@ VERSION        : v2.0.0
 
 ## I. THE ARCHITECTURE
 
-Blacksite Node is a fully offline, zero-knowledge password manager and secure notepad. There is no server. There is no account. There is no recovery email. The vault lives on your machine, encrypted, and the only key that exists is the one in your head... and perhaps a piece of paper.
+BLACKSITE is a fully offline, zero-knowledge password manager and secure notepad. There is no server. There is no account. There is no recovery email. The vault lives on your machine, encrypted, and the only key that exists is the one in your head... and perhaps a piece of paper.
 
 <div align="center">
-  <img src="docs/architecture/system_architecture.png" alt="Blacksite Node System Architecture" width="850"/>
+  <img src="docs/architecture/system_architecture.png" alt="BLACKSITE System Architecture" width="850"/>
 </div>
 
 **Mermaid Source:** [docs/architecture/architecture_mermaid.md](docs/architecture/architecture_mermaid.md)
 
 **Kerckhoffs's Principle**
 
-Blacksite Node strictly adheres to **Kerckhoffs's Principle**: *The security of a cryptographic system shouldn't rely on the secrecy of the algorithm.* Even if everything about the system, except the key, is public knowledge.
+BLACKSITE strictly adheres to **Kerckhoffs's Principle**: *The security of a cryptographic system shouldn't rely on the secrecy of the algorithm.* Even if everything about the system, except the key, is public knowledge.
 
-Our entire architecture, cryptographic flow, and source code are 100% transparent and open-source. The security of your vault relies entirely on the mathematical strength of ChaCha20-Poly1305 and Argon2id, not on "security through obscurity."
+Our entire architecture, cryptographic flow, and source code are 100% transparent and source-available. The security of your vault relies entirely on the mathematical strength of ChaCha20-Poly1305 and Argon2id, not on "security through obscurity."
 
-The frontend is treated as an **untrusted display layer**. It never handles raw key material, never makes cryptographic decisions, and never sees plaintext outside of an active unlocked session. All security logic — key derivation, encryption, decryption, rate limiting, duress detection — is implemented exclusively in Rust.
+The frontend is treated as an **untrusted display layer**. It never handles raw key material, never makes cryptographic decisions, and never sees plaintext outside of an active unlocked session. All security logic â€” key derivation, encryption, decryption, rate limiting, duress detection â€” is implemented exclusively in Rust.
 
 **Zero-Knowledge Vault Philosophy**
 
-The master passphrase is never stored. Not on disk. Not in memory beyond the duration of an active session. When the vault locks — whether by user action, window minimize, or process termination — the Rust `MasterKey` struct is dropped, triggering `ZeroizeOnDrop`: the 32 key bytes are overwritten with zeros before the memory is released. There is no recovery path. There is no backdoor. If the passphrase is lost, the vault is permanently inaccessible by design.
+The master passphrase is never stored. Not on disk. Not in memory beyond the duration of an active session. When the vault locks â€” whether by user action, window minimize, or process termination â€” the Rust `MasterKey` struct is dropped, triggering `ZeroizeOnDrop`: the 32 key bytes are overwritten with zeros before the memory is released. There is no recovery path. There is no backdoor. If the passphrase is lost, the vault is permanently inaccessible by design.
 
 The vault file (`vault.blacksite`) contains:
 
@@ -107,11 +107,11 @@ The vault file (`vault.blacksite`) contains:
 }
 ```
 
-The entire credential store (passwords, notes, and folders) is encrypted as a single atomic JSON blob. There is no per-entry encryption. Either the whole vault decrypts (correct passphrase) or nothing does (wrong passphrase → Poly1305 authentication failure before any plaintext is released).
+The entire credential store (passwords, notes, and folders) is encrypted as a single atomic JSON blob. There is no per-entry encryption. Either the whole vault decrypts (correct passphrase) or nothing does (wrong passphrase â†’ Poly1305 authentication failure before any plaintext is released).
 
 **Page Visibility Lock**
 
-The frontend registers a `visibilitychange` event listener. When the window is hidden — minimized, switched away from, or obscured — `lock_vault()` is called immediately. The Rust session is dropped, the master key is zeroized, and the view returns to the lock screen. The key does not wait for the user to explicitly lock. It is gone the moment the window is hidden.
+The frontend registers a `visibilitychange` event listener. When the window is hidden â€” minimized, switched away from, or obscured â€” `lock_vault()` is called immediately. The Rust session is dropped, the master key is zeroized, and the view returns to the lock screen. The key does not wait for the user to explicitly lock. It is gone the moment the window is hidden.
 
 ---
 
@@ -121,8 +121,8 @@ The frontend registers a `visibilitychange` event listener. When the window is h
 
 During vault initialization, the system generates two cryptographically independent passphrases:
 
-- **Master Passphrase** — unlocks the vault and decrypts all stored credentials.
-- **Canary Passphrase** — triggers silent vault destruction and opens a decoy empty session.
+- **Master Passphrase** â€” unlocks the vault and decrypts all stored credentials.
+- **Canary Passphrase** â€” triggers silent vault destruction and opens a decoy empty session.
 
 Both passphrases are derived via Argon2id with independent salts stored in the vault file. They are shown exactly once during setup and never persisted anywhere.
 
@@ -130,21 +130,21 @@ Both passphrases are derived via Argon2id with independent salts stored in the v
 
 ```
 unlock_vault(canary_passphrase)
-  │
-  ├── Derive key from input + master_salt → try decrypt master ciphertext
-  │     └── Poly1305 failure (wrong key)
-  │
-  ├── Derive key from input + duress_salt → try decrypt duress ciphertext
-  │     └── Poly1305 success
-  │
-  ├── wipe_vault():
-  │     ├── Overwrite .blacksite with zeros (file length preserved)
-  │     └── fs::remove_file()
-  │
-  ├── Open in-memory ghost session: { vault_data: [], is_duress: true }
-  │     └── add_credential / delete_credential silently no-op
-  │
-  └── Return Ok(()) ← identical to successful normal unlock
+  â”‚
+  â”œâ”€â”€ Derive key from input + master_salt â†’ try decrypt master ciphertext
+  â”‚     â””â”€â”€ Poly1305 failure (wrong key)
+  â”‚
+  â”œâ”€â”€ Derive key from input + duress_salt â†’ try decrypt duress ciphertext
+  â”‚     â””â”€â”€ Poly1305 success
+  â”‚
+  â”œâ”€â”€ wipe_vault():
+  â”‚     â”œâ”€â”€ Overwrite .blacksite with zeros (file length preserved)
+  â”‚     â””â”€â”€ fs::remove_file()
+  â”‚
+  â”œâ”€â”€ Open in-memory ghost session: { vault_data: [], is_duress: true }
+  â”‚     â””â”€â”€ add_credential / delete_credential silently no-op
+  â”‚
+  â””â”€â”€ Return Ok(()) â† identical to successful normal unlock
 ```
 
 The frontend receives no duress signal. From its perspective, the unlock succeeded and the vault is empty. Subsequent writes are silently discarded. On next launch, the vault file is absent: the app presents the initialization screen as if no vault was ever created.
@@ -156,12 +156,12 @@ There is no visible "Delete Data" button. No confirmation dialog. The duress pat
 In-memory defense against online brute-force attacks. Tracks consecutive failed authentication attempts and enforces increasing lockout durations before the next attempt is permitted.
 
 ```
-Attempt 1  →  0s   (warning displayed, no lockout)
-Attempt 2  →  1s
-Attempt 3  →  3s
-Attempt 4  →  10s
-Attempt 5  →  30s
-Attempt 6+ →  60s  (sustained maximum — one attempt per minute)
+Attempt 1  â†’  0s   (warning displayed, no lockout)
+Attempt 2  â†’  1s
+Attempt 3  â†’  3s
+Attempt 4  â†’  10s
+Attempt 5  â†’  30s
+Attempt 6+ â†’  60s  (sustained maximum â€” one attempt per minute)
 ```
 
 The rate limiter is in-memory only. It does not persist to disk. A process restart resets the counter. This is intentional: a persistent on-disk attempt counter would act as a side-channel, confirming the vault has been attacked. The Argon2id KDF provides the durable offline defense.
@@ -170,7 +170,7 @@ The rate limiter operates as a complement to Argon2id, not a replacement. Combin
 
 ### Encrypted Data Portability (.bsx)
 
-Blacksite Node exclusively exports to encrypted formats to prevent accidental plaintext data leakage to the local filesystem. All vault exports are saved in `.bsx` (Blacksite Export) format. 
+BLACKSITE exclusively exports to encrypted formats to prevent accidental plaintext data leakage to the local filesystem. All vault exports are saved in `.bsx` (Blacksite Export) format. 
 
 A `.bsx` file is identical in structure to the main `vault.blacksite` file. It is a full ChaCha20-Poly1305 encrypted JSON blob. Because of this, every `.bsx` file inherits the vault's strict **Tamper Detection (Poly1305 MAC Verification)**. If a single bit of the export file is altered or corrupted during transit, the authentication tag mathematically fails and the app refuses to decrypt it.
 
@@ -178,7 +178,7 @@ When importing a `.bsx` file on a new device, the user must provide the exact ma
 
 ### Steganography Protocol (EOF & LSB)
 
-For users operating under extreme threat models, Blacksite Node features a robust Steganography protocol to physically hide the existence of the vault entirely. The Rust backend is capable of embedding the encrypted vault into seemingly innocent media files (images, audio, or video).
+For users operating under extreme threat models, BLACKSITE features a robust Steganography protocol to physically hide the existence of the vault entirely. The Rust backend is capable of embedding the encrypted vault into seemingly innocent media files (images, audio, or video).
 
 The application supports two cryptographic methodologies for Steganography:
 
@@ -197,7 +197,7 @@ To ensure your encrypted backups and stealth payloads remain viable in the event
 
 ### Factory Reset / Data Wipe (Lost Passphrase)
 
-Because Blacksite Node is a strict zero-knowledge architecture, **there is absolutely no password recovery.** If you lose your Master Passphrase, your vault is mathematically irretrievable. 
+Because BLACKSITE is a strict zero-knowledge architecture, **there is absolutely no password recovery.** If you lose your Master Passphrase, your vault is mathematically irretrievable. 
 
 If you wish to completely factory reset the application to initialize a brand new sovereign vault, you can use the built-in **Wipe Vault** function. There are two locations where this can be triggered:
 
@@ -208,7 +208,7 @@ If you wish to completely factory reset the application to initialize a brand ne
    If you are already logged in, click the version number in the bottom-right corner of the sidebar to open the About Menu, then scroll down to the **Danger Zone**. You will be prompted to export your data first. To authorize this internal wipe, you do not need your passphrase; instead, you must manually type the words `WIPE VAULT` into the red verification box to prevent accidental clicks.
 
 > **WARNING regarding Windows Uninstallers (.msi / .nsis)**: 
-> Do **NOT** rely on the Windows Control Panel to "uninstall" Blacksite Node if your goal is to destroy your data. Standard Windows uninstallers intentionally do not touch the `%APPDATA%` directory to prevent accidental data loss. If you simply uninstall the application, your encrypted vault file will remain fully intact on your hard drive. 
+> Do **NOT** rely on the Windows Control Panel to "uninstall" BLACKSITE if your goal is to destroy your data. Standard Windows uninstallers intentionally do not touch the `%APPDATA%` directory to prevent accidental data loss. If you simply uninstall the application, your encrypted vault file will remain fully intact on your hard drive. 
 > **Always use the in-app Wipe Vault feature to securely zeroize your vault.**
 
 If the application is entirely unrecoverable and the UI cannot load, you can manually delete the vault via PowerShell:
@@ -225,7 +225,7 @@ Remove-Item -Recurse -Force "$env:APPDATA\com.blacksite.node"
 
 **The Diceware Passphrase System**
 
-Blacksite Node generates master and canary passphrases from a merged multilingual Diceware wordlist sourced from the BIP-39 standards: English, Spanish, French, Italian, Portuguese, and Czech — normalized through a Unicode NFD decomposition pipeline that strips all diacritical marks, enforces ASCII, and lowercases every word. The result is a clean, typeable, culturally diverse word pool of **12,288 words**.
+BLACKSITE generates master and canary passphrases from a merged multilingual Diceware wordlist sourced from the BIP-39 standards: English, Spanish, French, Italian, Portuguese, and Czech â€” normalized through a Unicode NFD decomposition pipeline that strips all diacritical marks, enforces ASCII, and lowercases every word. The result is a clean, typeable, culturally diverse word pool of **12,288 words**.
 
 Each passphrase word is selected independently using the OS CSPRNG (`OsRng`, backed by `BCryptGenRandom` on Windows, `getrandom(2)` on Linux) with rejection sampling to eliminate modulo bias. No word is weighted. No word is excluded from reuse.
 
@@ -237,23 +237,23 @@ The exponential scaling of the Diceware engine provides the following entropies:
 
 ```
 Word pool                 :  12,288 words
-Canary (Fixed 4 words)    :  12,288^4 = 2.27 × 10^16 combinations
-Master Baseline (5 words) :  12,288^5 = 2.82 × 10^20 combinations
-Master Maximum (24 words) :  12,288^24 = 3.24 × 10^98 combinations
+Canary (Fixed 4 words)    :  12,288^4 = 2.27 Ã— 10^16 combinations
+Master Baseline (5 words) :  12,288^5 = 2.82 Ã— 10^20 combinations
+Master Maximum (24 words) :  12,288^24 = 3.24 Ã— 10^98 combinations
 ```
 
 In context (using the baseline Standard 5-word mode):
 
 ```
-Grains of sand on Earth       ≈  7.5 × 10^18
-Standard Blacksite Space      =  2.82 × 10^20   (≈ 37× more than grains of sand)
+Grains of sand on Earth       â‰ˆ  7.5 Ã— 10^18
+Standard Blacksite Space      =  2.82 Ã— 10^20   (â‰ˆ 37Ã— more than grains of sand)
 ```
 
 **The Argon2id Bottleneck**
 
 A passphrase alone is not sufficient. The real defense is what happens when an attacker obtains the `.blacksite` file and attempts an offline dictionary attack.
 
-Every unlock attempt — including an offline brute-force against the raw file — must run the full Argon2id key derivation:
+Every unlock attempt â€” including an offline brute-force against the raw file â€” must run the full Argon2id key derivation:
 
 ```
 Algorithm   :  Argon2id  (RFC 9106)
@@ -263,26 +263,26 @@ Parallelism :  1 lane
 Output      :  256 bits  (ChaCha20-Poly1305 key)
 ```
 
-The 64 MiB memory requirement is the critical constraint. GPU-based cracking derives its speed from massive parallelism — thousands of cores running simultaneously. At 64 MiB per attempt, a GPU with 10 GB VRAM can sustain approximately **156 parallel derivations**. Each derivation takes roughly 300–800 ms on commodity hardware.
+The 64 MiB memory requirement is the critical constraint. GPU-based cracking derives its speed from massive parallelism â€” thousands of cores running simultaneously. At 64 MiB per attempt, a GPU with 10 GB VRAM can sustain approximately **156 parallel derivations**. Each derivation takes roughly 300â€“800 ms on commodity hardware.
 
 Optimistic attacker throughput: **~1 attempt per second** on a high-end GPU cluster.
 
 **Time-to-Crack Calculation**
 
 ```
-Passphrase space  :  2.43 × 10^22
+Passphrase space  :  2.43 Ã— 10^22
 Attacker speed    :  1 guess / second
-Time to exhaust   :  2.43 × 10^22 seconds
+Time to exhaust   :  2.43 Ã— 10^22 seconds
 
-Convert to years  :  2.43 × 10^22 ÷ 3.156 × 10^7 s/year
-                  =  7.7 × 10^14 years
+Convert to years  :  2.43 Ã— 10^22 Ã· 3.156 Ã— 10^7 s/year
+                  =  7.7 Ã— 10^14 years
 ```
 
 ```
-Time to brute-force Blacksite Node  ≈  7.7 × 10^14 years
-Age of the universe                 ≈  1.38 × 10^10 years
-──────────────────────────────────────────────────────────
-Ratio                               ≈  55,797 universe lifetimes
+Time to brute-force BLACKSITE  â‰ˆ  7.7 Ã— 10^14 years
+Age of the universe                 â‰ˆ  1.38 Ã— 10^10 years
+â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+Ratio                               â‰ˆ  55,797 universe lifetimes
 ```
 
 This assumes the attacker knows the algorithm, has the vault file, has a GPU cluster, and attempts every passphrase in the entire keyspace sequentially. It does not account for the Poly1305 authentication overhead, the ChaCha20 decryption step, or the two-salt duress architecture that forces the attacker to verify against two independent ciphertexts per guess.
@@ -293,11 +293,11 @@ This assumes the attacker knows the algorithm, has the vault file, has a GPU clu
 
 ## IV. MACHINE LEARNING ENGINE
 
-Blacksite Node features a fully offline, air-gapped machine learning engine to evaluate password strength. Rather than relying on simple regex checks (e.g., "must contain 1 uppercase, 1 number"), the ML Engine computes the actual statistical guessability of the password.
+BLACKSITE features a fully offline, air-gapped machine learning engine to evaluate password strength. Rather than relying on simple regex checks (e.g., "must contain 1 uppercase, 1 number"), the ML Engine computes the actual statistical guessability of the password.
 
 ### 1. Architecture & NLP Stack
 - **Model Architecture**: Character-Level LSTM (Long Short-Term Memory) Recurrent Neural Network.
-- **Inference Runtime**: ONNX Runtime (CPU-only, standalone `~13MB` wheel) — extremely fast and requires no external ML dependencies or graphics drivers.
+- **Inference Runtime**: ONNX Runtime (CPU-only, standalone `~13MB` wheel) â€” extremely fast and requires no external ML dependencies or graphics drivers.
 - **Scoring Math (NLL)**: The model predicts the probability of the *next* character given the previous characters. The strength is determined by calculating the **Negative Log-Likelihood (NLL)**. A higher NLL means the password is highly unpredictable to the model (High Entropy / Strong).
 - **Hybrid Pre-Check**: Passwords shorter than the context window (`seq_len=10`) are evaluated by a fast, rule-based diversity heuristic proxy, capping naturally at Moderate.
 
@@ -305,7 +305,7 @@ Blacksite Node features a fully offline, air-gapped machine learning engine to e
 - **Date Trained**: June 2026.
 - **Epochs**: Dynamically trained for 20 epochs with Early Stopping.
 - **Evaluation**: Best Validation Loss: `1.8096` | Best Validation Accuracy: `52.79%`. 
-  > *Note: 53% character-level accuracy means the model correctly predicts the exact next character out of 97 possible tokens more than half the time—a very strong indicator of human password predictability. The 97-character vocabulary consists of 26 lowercase, 26 uppercase, 10 digits, 32 symbols, and 3 special ML tokens (`<PAD>`, `<BOS>`, `<EOS>`).*
+  > *Note: 53% character-level accuracy means the model correctly predicts the exact next character out of 97 possible tokens more than half the timeâ€”a very strong indicator of human password predictability. The 97-character vocabulary consists of 26 lowercase, 26 uppercase, 10 digits, 32 symbols, and 3 special ML tokens (`<PAD>`, `<BOS>`, `<EOS>`).*
 - **Datasets**: The model was trained on a total of **3 million passwords** (merged and randomly deduplicated) drawn from a mix of 3 datasets to learn raw, unfiltered human password-generation patterns. Training was accelerated using a Google Colab T4 GPU.
 
 | Dataset | Passwords | What it adds |
@@ -313,7 +313,7 @@ Blacksite Node features a fully offline, air-gapped machine learning engine to e
 | **RockYou** | 14.3M | English patterns, leet speak baseline |
 | **SecLists 10M** | 10M | Post-2016 breaches, default credentials |
 | **Probable Wordlists Top95** | ~30M | Frequency-ranked real passwords, multi-language |
-- **Open Source Pipeline**: The complete end-to-end training pipeline, data preparation, quantization, and ONNX export code is provided in `ml_engine/blacksite_ml_pipeline.ipynb` and the `ml_engine/` directory.
+- **Source-Available Pipeline**: The complete end-to-end training pipeline, data preparation, quantization, and ONNX export code is provided in `ml_engine/blacksite_ml_pipeline.ipynb` and the `ml_engine/` directory.
 
 ### 3. Inference and Scoring (The Mathematics)
 For password $p = c_1c_2 \ldots c_n$, the **joint log-probability** is:
@@ -328,9 +328,9 @@ $$ \text{NLL} = \frac{-\log P(p)}{n - k} $$
 
 | NLL Range | Label | Interpretation |
 | :--- | :--- | :--- |
-| $\text{NLL} < 1.5$ | 🔴 **Weak** | Model predicts it easily — it IS common |
-| $1.5 \le \text{NLL} < 3.0$ | 🟡 **Moderate** | Some structure, but patterned |
-| $\text{NLL} \ge 3.0$ | 🟢 **Strong** | Model is consistently surprised |
+| $\text{NLL} < 1.5$ | ðŸ”´ **Weak** | Model predicts it easily â€” it IS common |
+| $1.5 \le \text{NLL} < 3.0$ | ðŸŸ¡ **Moderate** | Some structure, but patterned |
+| $\text{NLL} \ge 3.0$ | ðŸŸ¢ **Strong** | Model is consistently surprised |
 
 ### 4. Architecture Flow
 <div align="center">
@@ -339,7 +339,7 @@ $$ \text{NLL} = \frac{-\log P(p)}{n - k} $$
 **Mermaid Source:** [ml_engine/ml_architecture.md](ml_engine/ml_architecture.md)
 
 ### 5. Testing the ML Engine Locally
-The machine learning engine is completely decoupled from the Tauri application and can be tested directly from your terminal. This guarantees transparent, open-source verification of the neural network's behavior.
+The machine learning engine is completely decoupled from the Tauri application and can be tested directly from your terminal. This guarantees transparent, source-available verification of the neural network's behavior.
 
 ```bash
 cd ml_engine
@@ -367,7 +367,7 @@ READY
 ---
 
 ```
-BLACKSITE NODE — No cloud. No account. No mercy.
+BLACKSITE â€” No cloud. No account. No mercy.
 ```
 ## V. BUILD INSTRUCTIONS
 
@@ -380,7 +380,7 @@ BLACKSITE NODE — No cloud. No account. No mercy.
 | Tauri CLI v2 | bundled | invoked via `npm run tauri` |
 | Platform linker | Windows: MSVC or GNU | GNU used in this project |
 
-**Windows — GNU toolchain setup:**
+**Windows â€” GNU toolchain setup:**
 
 ```powershell
 # Install MSYS2 (recommended: install to a non-system drive to preserve C: space)
@@ -406,7 +406,7 @@ rustup default stable-x86_64-pc-windows-gnu
 error: could not compile `blacksite-node`
 ```
 
-This error occurs when the Windows PE/DLL format's hard limit of 65,535 export ordinals is exceeded. It is triggered by including `cdylib` or `staticlib` in the crate type — both produce a Windows DLL, which hits the PE format ceiling when a large dependency tree (Tauri + cryptographic crates) is in scope.
+This error occurs when the Windows PE/DLL format's hard limit of 65,535 export ordinals is exceeded. It is triggered by including `cdylib` or `staticlib` in the crate type â€” both produce a Windows DLL, which hits the PE format ceiling when a large dependency tree (Tauri + cryptographic crates) is in scope.
 
 **Fix:** Open `src-tauri/Cargo.toml` and ensure the lib section reads:
 
@@ -416,7 +416,7 @@ name = "blacksite_node_lib"
 crate-type = ["rlib"]
 ```
 
-`cdylib` and `staticlib` are only required for mobile targets (Android/iOS). Desktop Tauri builds exclusively need `rlib`. This is the confirmed working configuration for this project — do not add `cdylib` or `staticlib` back unless targeting mobile platforms.
+`cdylib` and `staticlib` are only required for mobile targets (Android/iOS). Desktop Tauri builds exclusively need `rlib`. This is the confirmed working configuration for this project â€” do not add `cdylib` or `staticlib` back unless targeting mobile platforms.
 
 ### Clone and Install
 
@@ -472,10 +472,10 @@ src-tauri\target\x86_64-pc-windows-gnu\release\blacksite-node.exe
 | Property | Implementation |
 |---|---|
 | Passphrase storage | Never stored. Derived on demand, zeroized on lock. |
-| Key in memory | `ZeroizeOnDrop` — 32 bytes overwritten with zeros on drop. |
+| Key in memory | `ZeroizeOnDrop` â€” 32 bytes overwritten with zeros on drop. |
 | Vault encryption | ChaCha20-Poly1305 AEAD, 256-bit key, random 96-bit nonce per write. |
 | Key derivation | Argon2id, 64 MiB / 3 iterations / 1 lane. |
-| Nonce reuse | Impossible — OsRng generates a fresh nonce for every `encrypt_vault()` call. |
+| Nonce reuse | Impossible â€” OsRng generates a fresh nonce for every `encrypt_vault()` call. |
 | Tamper detection | Poly1305 MAC verified before any plaintext is released. Magic header verification. |
 | Brute-force defense | Argon2id memory hardness + exponential backoff rate limiter. |
 | Coercion defense | Canary Passphrase triggers silent wipe + ghost session. |
@@ -505,7 +505,7 @@ Get-FileHash .\blacksite-node-setup.exe -Algorithm SHA256
 
 ### Dual-Deployment Strategy
 
-Blacksite Node ships in two distribution forms to cover different operational contexts.
+BLACKSITE ships in two distribution forms to cover different operational contexts.
 
 ---
 
@@ -515,7 +515,7 @@ Standard installation wizards. Installs the application to `Program Files`, crea
 
 ```
 Target audience   :  Fixed workstation operators
-Installation path :  C:\Program Files\Blacksite Node\
+Installation path :  C:\Program Files\BLACKSITE\
 Registry entries  :  Uninstaller key (HKLM\Software\Microsoft\Windows\CurrentVersion\Uninstall)
 Vault location    :  %APPDATA%\com.blacksite.node\vault.blacksite
 ```
@@ -523,50 +523,50 @@ Vault location    :  %APPDATA%\com.blacksite.node\vault.blacksite
 Built by Tauri's bundler as part of `npm run tauri build`. Outputs:
 
 ```
-src-tauri\target\x86_64-pc-windows-gnu\release\bundle\nsis\Blacksite Node_2.0.0_x64-setup.exe
-src-tauri\target\x86_64-pc-windows-gnu\release\bundle\msi\Blacksite Node_2.0.0_x64_en-US.msi
+src-tauri\target\x86_64-pc-windows-gnu\release\bundle\nsis\BLACKSITE_2.0.0_x64-setup.exe
+src-tauri\target\x86_64-pc-windows-gnu\release\bundle\msi\BLACKSITE_2.0.0_x64_en-US.msi
 ```
 
 ---
 
 **2. Portable Binary (`blacksite-node.exe`)**
 
-A standalone executable with zero Windows Registry footprint. No installer. No elevation required. Copy it to any location — including an encrypted USB drive — and run it directly. The vault file is created in the standard OS app data directory regardless of where the binary is executed from, keeping the executable itself stateless.
+A standalone executable with zero Windows Registry footprint. No installer. No elevation required. Copy it to any location â€” including an encrypted USB drive â€” and run it directly. The vault file is created in the standard OS app data directory regardless of where the binary is executed from, keeping the executable itself stateless.
 
 ```
 Target audience   :  Field operators, air-gapped environments, USB deployments
-Installation path :  None — runs in place
+Installation path :  None â€” runs in place
 Registry entries  :  Zero
 Vault location    :  %APPDATA%\com.blacksite.node\vault.blacksite
 ```
 
 ### The GNU Runtime & Offline ML Dependencies
-Because Blacksite Node is compiled with the **GNU toolchain** (`x86_64-pc-windows-gnu`) and features a fully offline machine learning engine, the portable deployment requires a specific file structure to function. The binary does not statically link the WebView2 loader, nor does it embed the massive ONNX ML models.
+Because BLACKSITE is compiled with the **GNU toolchain** (`x86_64-pc-windows-gnu`) and features a fully offline machine learning engine, the portable deployment requires a specific file structure to function. The binary does not statically link the WebView2 loader, nor does it embed the massive ONNX ML models.
 
 **Required operational pattern for USB deployment:**
 
 ```text
 [Encrypted USB Drive]
- ├── blacksite-node.exe                         ← the main app
- ├── WebView2Loader.dll                         ← GNU runtime dependency
- ├── inference.exe                              ← offline ML sidecar daemon
- └── _up_/
-      └── ml_engine/
-           └── exports/
-                ├── password_model.onnx         ← the neural network weights
-                ├── vocab.json                  ← the token vocabulary
-                └── dataset_meta.json
+ â”œâ”€â”€ blacksite-node.exe                         â† the main app
+ â”œâ”€â”€ WebView2Loader.dll                         â† GNU runtime dependency
+ â”œâ”€â”€ inference.exe                              â† offline ML sidecar daemon
+ â””â”€â”€ _up_/
+      â””â”€â”€ ml_engine/
+           â””â”€â”€ exports/
+                â”œâ”€â”€ password_model.onnx         â† the neural network weights
+                â”œâ”€â”€ vocab.json                  â† the token vocabulary
+                â””â”€â”€ dataset_meta.json
 ```
 
 If any of these files are absent, the application or its machine learning components will fail on launch.
 
-Run from the USB directly. The vault file persists in the host machine's AppData between sessions. The binary itself carries no state. If the USB is lost or seized, the attacker has only an executable — no vault, no credentials.
+Run from the USB directly. The vault file persists in the host machine's AppData between sessions. The binary itself carries no state. If the USB is lost or seized, the attacker has only an executable â€” no vault, no credentials.
 
 For a fully self-contained USB setup where the vault travels with the binary, move the vault file to the USB and point the binary at it via a wrapper script:
 
 ```powershell
 # Wrapper: run-blacksite.ps1 (place alongside the .exe on the USB)
-# This is an advanced pattern — the vault file on the USB must itself be
+# This is an advanced pattern â€” the vault file on the USB must itself be
 # protected by drive encryption (e.g. VeraCrypt) at all times.
 $env:APPDATA = "$PSScriptRoot\data"
 Start-Process "$PSScriptRoot\blacksite-node.exe"
@@ -585,11 +585,12 @@ For the portable binary on machines without WebView2, install the runtime manual
 
 ```
 https://developer.microsoft.com/en-us/microsoft-edge/webview2/
-→ Download: Evergreen Bootstrapper or Standalone Installer (x64)
+â†’ Download: Evergreen Bootstrapper or Standalone Installer (x64)
 ```
 
 ---
 
 `
-BLACKSITE NODE — No cloud. No account. No mercy.
+BLACKSITE â€” No cloud. No account. No mercy.
 `
+
