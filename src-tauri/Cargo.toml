@@ -1,8 +1,9 @@
 [package]
-name = "blacksite-node"
-version = "2.0.0"
-description = "Blacksite Node — Sovereign Offline Password Manager"
-authors = ["Blacksite Operator"]
+name = "blacksite"
+version = "3.0.0"
+description = "Blacksite Sovereign Vault"
+authors = ["Matlih"]
+license = "PolyForm-Noncommercial-1.0.0"
 edition = "2021"
 
 [lib]

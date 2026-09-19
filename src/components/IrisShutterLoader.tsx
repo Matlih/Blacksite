@@ -18,7 +18,7 @@ export const IrisShutterLoader: React.FC = () => {
       
       {/* Central Logo (Pupil) that fades in at the end */}
       <div className="absolute z-10 opacity-0 animate-fade-in-late flex items-center justify-center">
-        <img src="/app_logo.png" alt="Blacksite Node" className="w-20 h-20 object-contain drop-shadow-[0_0_20px_rgba(56,189,248,0.7)]" />
+        <img src="/app_logo.png" alt="Blacksite" className="w-20 h-20 object-contain drop-shadow-[0_0_20px_rgba(56,189,248,0.7)]" />
       </div>
 
     </div>

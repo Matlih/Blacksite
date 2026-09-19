@@ -1,4 +1,4 @@
-//! # security.rs — Blacksite Node Active Defense Engine
+//! # security.rs — Blacksite Active Defense Engine
 //!
 //! ## Threat Model
 //! This module protects against **online brute-force attacks** — a scenario where

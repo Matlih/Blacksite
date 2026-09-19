@@ -13,7 +13,9 @@ import { IrisShutterLoader } from "./IrisShutterLoader";
 import { StegoExportModal } from "./StegoExportModal";
 import { AboutModal } from "./AboutModal";
 import { NotesView } from "./NotesView";
+import { AuthenticatorView } from "./AuthenticatorView";
 import { Dropdown } from "./Dropdown";
+import { extractTotpSecret, isValidBase32 } from "../lib/totp";
 
 interface VaultViewProps {
   onLock: () => void;
@@ -26,6 +28,7 @@ interface CredentialForm {
   password: string;
   notes: string;
   category: string;
+  totp_secret: string;
 }
 
 const EMPTY_FORM: CredentialForm = {
@@ -34,14 +37,17 @@ const EMPTY_FORM: CredentialForm = {
   password: "",
   notes: "",
   category: "",
+  totp_secret: "",
 };
 
 type SortField = "service" | "username" | "created_at" | "updated_at" | "category";
 type SortDirection = "asc" | "desc";
 
+
 export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
   const [entries, setEntries] = useState<CredentialEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totpTick, setTotpTick] = useState(0);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
@@ -55,6 +61,7 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
   const [form, setForm] = useState<CredentialForm>(EMPTY_FORM);
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState("");
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
   const [isModalPasswordRevealed, setIsModalPasswordRevealed] = useState(false);
   
   const [showGenerator, setShowGenerator] = useState(false);
@@ -67,7 +74,7 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
   const [aboutOpen, setAboutOpen] = useState(false);
   const [appVersion, setAppVersion] = useState<string>("0.1.0");
 
-  const [activeTab, setActiveTab] = useState<"passwords" | "notes">("passwords");
+  const [activeTab, setActiveTab] = useState<"passwords" | "notes" | "authenticator">("passwords");
 
   const [sortField, setSortField] = useState<SortField>("service");
   const [sortDir, setSortDir] = useState<SortDirection>("asc");
@@ -127,6 +134,11 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => setTotpTick(Date.now()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -218,10 +230,11 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
     setFormLoading(true);
     setFormError("");
     try {
+      const cleanedTotp = form.totp_secret.trim() ? extractTotpSecret(form.totp_secret) : undefined;
       if (formMode === "add") {
-        await addCredential(form.service.trim(), form.username.trim(), form.password, form.notes.trim(), form.category);
+        await addCredential(form.service.trim(), form.username.trim(), form.password, form.notes.trim(), form.category, cleanedTotp);
       } else if (formMode === "edit" && form.id) {
-        await editCredential(form.id, form.service.trim(), form.username.trim(), form.password, form.notes.trim(), form.category);
+        await editCredential(form.id, form.service.trim(), form.username.trim(), form.password, form.notes.trim(), form.category, cleanedTotp);
       }
       setForm(EMPTY_FORM);
       setShowForm(false);
@@ -242,6 +255,7 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
       password: entry.password,
       notes: entry.notes,
       category: entry.category || "",
+      totp_secret: entry.totp_secret || "",
     });
     setShowForm(true);
     setFormError("");
@@ -262,9 +276,9 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
     }
   };
 
-  const handleDeleteHistory = async (id: string, retiredAt: number) => {
+  const handleDeleteHistory = async (id: string, changedAt: number) => {
     try {
-      await deleteHistoryEntry(id, retiredAt);
+      await deleteHistoryEntry(id, changedAt);
       await loadEntries();
     } catch (e) {
       setError(String(e));
@@ -287,7 +301,8 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
       const q = searchQuery.toLowerCase();
       const matchSearch = !q || e.service.toLowerCase().includes(q) || e.username.toLowerCase().includes(q) || e.notes.toLowerCase().includes(q);
       const matchCat = !categoryFilter || e.category === categoryFilter;
-      return matchSearch && matchCat;
+      const isStandaloneTotp = e.password === "" && !!e.totp_secret;
+      return matchSearch && matchCat && !isStandaloneTotp;
     })
     .sort((a, b) => {
       let aVal = a[sortField] || "";
@@ -317,8 +332,8 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
       {/* Top bar */}
       <div className="flex items-center justify-between px-5 py-3 bg-gunmetal-800 border-b border-ops-700 shrink-0">
         <div className="flex items-center gap-3">
-          <img src="/app_logo.png" alt="Blacksite Node" className="h-6 w-auto object-contain" />
-          <span className="text-xs uppercase tracking-widest text-slate-dim hidden md:inline">BLACKSITE NODE</span>
+          <img src="/app_logo.png" alt="Blacksite" className="h-6 w-auto object-contain" />
+          <span className="text-xs uppercase tracking-widest text-slate-dim hidden md:inline">BLACKSITE</span>
           <span className="text-xs text-ops-500 select-none">|</span>
           <div className="flex bg-gunmetal-900 rounded-full p-0.5 border border-ops-700/50">
             <button 
@@ -326,6 +341,12 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
               className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-widest transition-colors ${activeTab === "passwords" ? "bg-cyan-600/20 text-cyan-400" : "text-zinc-500 hover:text-slate-300"}`}
             >
               PASSWORDS
+            </button>
+            <button 
+              onClick={() => setActiveTab("authenticator")}
+              className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-widest transition-colors ${activeTab === "authenticator" ? "bg-cyan-600/20 text-cyan-400" : "text-zinc-500 hover:text-slate-300"}`}
+            >
+              AUTH
             </button>
             <button 
               onClick={() => setActiveTab("notes")}
@@ -377,7 +398,7 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
       </div>
 
       {/* Main Content Area */}
-      {activeTab === "passwords" ? (
+      {activeTab === "passwords" && (
         <>
           {/* Search bar */}
           <div className="px-5 py-2 bg-gunmetal-800 border-b border-ops-700 shrink-0 flex gap-2">
@@ -421,19 +442,34 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
                 <div className="label-ops mb-1 text-xs">SERVICE *</div>
                 <input type="text" value={form.service} onChange={(e) => setForm(f => ({...f, service: e.target.value}))} placeholder="github.com" className="input-ops" autoFocus required />
               </div>
-              <div>
+              <div className="relative">
                 <div className="label-ops mb-1 text-xs">CATEGORY</div>
                 <input 
                   type="text" 
-                  list="categories" 
                   value={form.category} 
                   onChange={(e) => setForm(f => ({...f, category: e.target.value}))} 
-                  className="input-ops uppercase" 
-                  placeholder="Select or type..." 
+                  onFocus={() => setShowCategoryDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowCategoryDropdown(false), 200)}
+                  className="input-ops uppercase w-full" 
+                  placeholder="SELECT OR TYPE..." 
                 />
-                <datalist id="categories">
-                  {filterOptions.map(cat => <option key={cat} value={cat} />)}
-                </datalist>
+                {showCategoryDropdown && filterOptions.length > 0 && (
+                  <div className="absolute top-[105%] left-0 right-0 bg-gunmetal-800 border border-ops-700 shadow-xl rounded z-50 max-h-48 overflow-y-auto overflow-x-hidden flex flex-col drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+                    {filterOptions.filter(Boolean).map(cat => (
+                      <div 
+                        key={String(cat)} 
+                        className="px-3 py-2 text-xs uppercase cursor-pointer hover:bg-ops-700/50 hover:text-cyan-400 text-slate-300 transition-colors shrink-0"
+                        onClick={(e) => {
+                           e.stopPropagation();
+                           setForm(f => ({...f, category: String(cat)}));
+                           setShowCategoryDropdown(false);
+                        }}
+                      >
+                        {String(cat)}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 mb-2">
@@ -470,6 +506,21 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
                     </div>
                   </div>
                 )}
+            </div>
+            <div className="mb-3">
+              <div className="label-ops mb-1 text-xs">2FA / AUTHENTICATOR SECRET (OPTIONAL)</div>
+              <div className="relative">
+                <input 
+                  type="text" 
+                  value={form.totp_secret} 
+                  onChange={(e) => setForm(f => ({...f, totp_secret: e.target.value}))} 
+                  placeholder="Base32 secret (e.g. JBSWY3DPEHPK3PXP) or otpauth:// URI" 
+                  className={`input-ops w-full ${form.totp_secret && !isValidBase32(form.totp_secret) ? 'border-red-500/50 focus:border-red-500/50' : ''}`}
+                />
+                {form.totp_secret && isValidBase32(form.totp_secret) && (
+                  <Check size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-emerald-400" />
+                )}
+              </div>
             </div>
             {formError && <div className="text-red-critical text-xs mb-2 flex items-center gap-1"><AlertTriangle size={10} />{formError}</div>}
             <div className="flex gap-2">
@@ -518,23 +569,27 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
 
                 return (
                   <React.Fragment key={entry.id}>
-                    <tr className="table-row-ops border-b border-ops-800/50">
-                      <td className="px-5 py-3 text-sm text-slate-text">{entry.service}</td>
-                      <td className="px-3 py-3 text-xs">
+                    <tr 
+                      className="table-row-ops border-b border-ops-800/50 hover:bg-ops-800/30 transition-colors"
+                      onDoubleClick={() => openEdit(entry)}
+                      title="Double-click to edit"
+                    >
+                      <td className="px-5 py-3 text-sm text-slate-text max-w-[120px] sm:max-w-[150px] md:max-w-[200px] truncate" title={entry.service}>{entry.service}</td>
+                      <td className="px-3 py-3 text-xs max-w-[100px] truncate">
                         {entry.category ? (
-                          <span className="bg-ops-700/50 text-blue-ops px-2 py-0.5 rounded uppercase tracking-wider border border-ops-600">{entry.category}</span>
+                          <span className="bg-ops-700/50 text-blue-ops px-2 py-0.5 rounded uppercase tracking-wider border border-ops-600 truncate inline-block max-w-full align-bottom">{entry.category}</span>
                         ) : (
                           <span className="text-slate-label italic">Uncat</span>
                         )}
                       </td>
-                      <td className="px-3 py-3 text-sm text-slate-dim">{entry.username || "—"}</td>
-                      <td className="px-3 py-3 text-sm font-mono">
+                      <td className="px-3 py-3 text-sm text-slate-dim max-w-[100px] sm:max-w-[150px] md:max-w-[200px] truncate" title={entry.username}>{entry.username || "—"}</td>
+                      <td className="px-3 py-3 text-sm font-mono max-w-[100px] sm:max-w-[150px] md:max-w-[200px] truncate">
                         <span className={isRevealed ? "text-slate-text select-all" : "text-slate-label tracking-widest select-none"}>
                           {isRevealed ? entry.password : "•".repeat(Math.min(entry.password.length, 16))}
                         </span>
                       </td>
-                      <td className="px-3 py-3 text-xs text-slate-dim hidden md:table-cell">{new Date(entry.updated_at * 1000).toLocaleDateString()}</td>
-                      <td className="px-3 py-3 text-xs text-slate-label hidden lg:table-cell">{entry.notes || "—"}</td>
+                      <td className="px-3 py-3 text-xs text-slate-dim hidden md:table-cell whitespace-nowrap">{new Date(entry.updated_at * 1000).toLocaleDateString()}</td>
+                      <td className="px-3 py-3 text-xs text-slate-label hidden lg:table-cell max-w-[150px] xl:max-w-[250px] truncate" title={entry.notes}>{entry.notes || "—"}</td>
                       <td className="px-3 py-3">
                         <div className="flex items-center justify-end gap-1">
                           {hasHistory && (
@@ -557,6 +612,7 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
                         </div>
                       </td>
                     </tr>
+
                     {isHistoryOpen && hasHistory && (
                       <tr className="bg-gunmetal-800/30">
                         <td colSpan={5} className="px-5 py-3">
@@ -566,9 +622,9 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
                               const histCopied = copiedId === `${entry.id}-hist-${idx}`;
                               return (
                                 <div key={idx} className="flex items-center justify-between bg-gunmetal-900 border border-ops-700 px-3 py-2">
-                                  <div className="flex items-center gap-4">
-                                    <span className="font-mono text-sm text-slate-dim">{isRevealed ? hist.password : "•".repeat(Math.min(hist.password.length, 16))}</span>
-                                    <span className="text-xs text-slate-label">Retired: {new Date(hist.retired_at * 1000).toLocaleString()}</span>
+                                  <div className="flex items-center gap-4 min-w-0 mr-4">
+                                    <span className="font-mono text-sm text-slate-dim truncate" title={hist.password}>{isRevealed ? hist.password : "•".repeat(Math.min(hist.password.length, 16))}</span>
+                                    <span className="text-xs text-slate-label shrink-0">Retired: {new Date(hist.changed_at * 1000).toLocaleString()}</span>
                                   </div>
                                   <div className="flex items-center gap-2">
                                     <button onClick={() => toggleReveal(entry.id)} className="p-1 text-slate-label hover:text-slate-text" title="Toggle visibility">
@@ -577,7 +633,7 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
                                     <button onClick={() => handleCopyPassword(hist as any, `${entry.id}-hist-${idx}`)} className={`p-1 text-slate-label hover:text-slate-text ${histCopied ? "text-blue-active" : ""}`}>
                                       {histCopied ? <Check size={12} /> : <Copy size={12} />}
                                     </button>
-                                    <button onClick={() => handleDeleteHistory(entry.id, hist.retired_at)} className="p-1 text-slate-label hover:text-red-alert">
+                                    <button onClick={() => handleDeleteHistory(entry.id, hist.changed_at)} className="p-1 text-slate-label hover:text-red-alert">
                                       <Trash2 size={12} />
                                     </button>
                                   </div>
@@ -603,10 +659,18 @@ export const VaultView: React.FC<VaultViewProps> = ({ onLock }) => {
         <span className="text-xs text-ops-500 font-mono tracking-widest cursor-pointer hover:text-blue-active" onClick={() => setAboutOpen(true)}>v{appVersion}</span>
       </div>
       </>
-      ) : (
+      )}
+      {activeTab === "notes" && (
         <div className="flex-1 overflow-hidden">
           <NotesView />
         </div>
+      )}
+      {activeTab === "authenticator" && (
+        <AuthenticatorView 
+          entries={entries} 
+          totpTick={totpTick} 
+          onRefresh={loadEntries}
+        />
       )}
 
       {/* Generator modal */}

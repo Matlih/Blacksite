@@ -34,13 +34,13 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, appVers
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-      <div className="bg-gunmetal-900 border border-zinc-800 rounded-lg shadow-2xl w-full max-w-sm flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+      <div className="bg-gunmetal-900 border border-zinc-800 rounded-lg shadow-2xl w-full max-w-sm flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh]">
         
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-gunmetal-800">
+        <div className="flex items-center justify-between p-4 border-b border-zinc-800 bg-gunmetal-800 shrink-0">
           <div className="flex items-center gap-2 text-slate-200 font-bold text-sm">
             <Info size={16} className="text-emerald-500" />
-            ABOUT BLACKSITE NODE
+            ABOUT BLACKSITE
           </div>
           <button 
             onClick={onClose}
@@ -51,20 +51,23 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, appVers
         </div>
 
         {/* Content */}
-        <div className="p-6 flex flex-col items-center space-y-6">
+        <div className="p-6 flex flex-col items-center space-y-6 overflow-y-auto">
           <div className="text-center space-y-1">
-            <img src="/app_logo.png" alt="Blacksite Node" className="h-16 w-auto object-contain mx-auto mb-3 opacity-90" />
+            <img src="/app_logo.png" alt="Blacksite" className="h-16 w-auto object-contain mx-auto mb-3 opacity-90" />
             <div className="text-xs text-zinc-500 font-mono">VERSION {appVersion}</div>
-            <div className="text-xs text-zinc-600 font-mono mt-1">BUILD DATE: 2026-06-19</div>
+            <div className="text-xs text-zinc-600 font-mono mt-1">BUILD DATE: 2026-09-19</div>
             <div className="text-xs text-ops-500 font-mono mt-2 uppercase tracking-widest">
               Developed By: Montazar Matlih (github.com/Matlih)
             </div>
           </div>
 
-          {/* FOSS Tag */}
-          <div className="w-full text-center p-3 border border-dashed border-zinc-700 bg-zinc-900/50 rounded">
-            <div className="text-xs font-semibold text-emerald-400 uppercase tracking-widest mb-1">100% Free Open Source Software (FOSS)</div>
-            <div className="text-xs text-zinc-400">Zero telemetry. Zero clouds.</div>
+          {/* SAS Tag */}
+          <div className="w-full bg-ops-800/50 border border-ops-700/50 p-4 rounded text-center">
+            <div className="text-xs font-semibold text-emerald-400 uppercase tracking-widest mb-1">Source-Available Software (SAS)</div>
+            <p className="text-xs text-slate-dim leading-relaxed">
+              Blacksite is distributed under the PolyForm Noncommercial 1.0.0 license. 
+              The source code is fully visible, verifiable, and freely available for personal, non-commercial use.
+            </p>
           </div>
 
 

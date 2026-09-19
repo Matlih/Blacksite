@@ -1,4 +1,4 @@
-//! # lib.rs — Blacksite Node Tauri Command Surface
+//! # lib.rs — Blacksite Tauri Command Surface
 
 mod crypto;
 mod security;
@@ -345,6 +345,7 @@ async fn add_credential(
     password: String,
     notes: String,
     category: Option<String>,
+    totp_secret: Option<String>,
     state: State<'_, VaultState>,
 ) -> Result<String, String> {
     let mut app_state = state.lock().await;
@@ -364,7 +365,7 @@ async fn add_credential(
         .as_secs();
 
     let mut id_bytes = [0u8; 16];
-    OsRng.fill_bytes(&mut id_bytes);
+        OsRng.fill_bytes(&mut id_bytes);
     let id = hex::encode(id_bytes);
 
     let entry = CredentialEntry {
@@ -377,6 +378,7 @@ async fn add_credential(
         updated_at: now,
         password_history: Vec::new(),
         category,
+        totp_secret,
     };
 
     session.vault_data.entries.push(entry);
@@ -450,6 +452,7 @@ async fn edit_credential(
     password: String,
     notes: String,
     category: Option<String>,
+    totp_secret: Option<String>,
     state: State<'_, VaultState>,
 ) -> Result<(), String> {
     let mut app_state = state.lock().await;
@@ -479,6 +482,7 @@ async fn edit_credential(
     entry.password = password;
     entry.notes = notes;
     entry.category = category;
+    entry.totp_secret = totp_secret;
     entry.updated_at = now;
 
     let salt_bytes = read_vault_salt(&app_state.vault_path)?;

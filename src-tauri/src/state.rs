@@ -1,4 +1,4 @@
-//! # state.rs — Blacksite Node Session State Manager
+//! # state.rs — Blacksite Session State Manager
 //!
 //! ## Zero-Knowledge Session Architecture
 //!
@@ -34,13 +34,12 @@
 //! - `VaultData` is dropped normally when `AppState.session` is set to `None`.
 //! - The `tokio::sync::Mutex` prevents concurrent access to session state,
 //!   eliminating race conditions where a lock operation races with an add operation.
-
 use crate::crypto::{DuressBlob, MasterKey, VaultData};
 use crate::security::RateLimiter;
 use std::path::PathBuf;
 use tokio::sync::Mutex;
 
-/// The complete runtime state of a Blacksite Node session.
+/// The complete runtime state of a Blacksite session.
 /// Wrapped in `tokio::sync::Mutex` and registered as a Tauri managed state,
 /// enabling safe concurrent access from multiple Tauri commands.
 pub struct AppState {

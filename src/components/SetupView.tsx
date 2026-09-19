@@ -4,7 +4,7 @@ import { generatePassphrase, setupVault, importVault, importStegoVault, getAppVe
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
 import { MinimalLineLoader } from "./MinimalLineLoader";
 import { AboutModal } from "./AboutModal";
-import releasesQr from "../assets/blacksite_node-releases_qr.png";
+import releasesQr from "../assets/blacksite-releases_qr.png";
 
 interface SetupViewProps {
   onSetupComplete: () => void;
@@ -166,8 +166,8 @@ export const SetupView: React.FC<SetupViewProps> = ({ onSetupComplete }) => {
       <div className="flex flex-col h-full bg-gunmetal-900 text-slate-text font-mono items-center justify-center relative">
         <AboutModal isOpen={aboutOpen} onClose={() => setAboutOpen(false)} appVersion={appVersion} />
         <div className="panel-ops p-12 w-full max-w-2xl z-10 flex flex-col items-center text-center animate-in slide-in-from-bottom-4">
-          <img src="/app_logo.png" alt="Blacksite Node" className="h-16 w-auto object-contain mb-6 animate-pulse-slow" />
-          <h1 className="text-2xl tracking-widest uppercase text-slate-200 mb-2 font-bold">BLACKSITE NODE</h1>
+          <img src="/app_logo.png" alt="Blacksite" className="h-16 w-auto object-contain mb-6 animate-pulse-slow" />
+          <h1 className="text-2xl tracking-widest uppercase text-slate-200 mb-2 font-bold">BLACKSITE</h1>
           <h2 className="text-sm tracking-widest text-emerald-500 mb-8 uppercase font-bold">Sovereign Offline Password Manager</h2>
           
           <div className="space-y-4 text-sm text-slate-dim leading-relaxed mb-8">
@@ -176,7 +176,7 @@ export const SetupView: React.FC<SetupViewProps> = ({ onSetupComplete }) => {
               Zero-knowledge Architecture. Cryptographic Security.<br/>No cloud. No account.
             </p>
             <div className="p-4 border border-dashed border-emerald-500/50 bg-emerald-500/5 rounded text-emerald-400/90 text-xs mt-4">
-              Blacksite Node is 100% Free, Open Source Software (FOSS). No subscriptions, no telemetry, forever.
+              Blacksite is Source-Available Software (SAS). No subscriptions, no telemetry, forever.
               <div className="mt-2 text-ops-500 uppercase tracking-widest font-bold">
                 Developed By: Montazar Matlih (github.com/Matlih)
               </div>
@@ -213,8 +213,8 @@ export const SetupView: React.FC<SetupViewProps> = ({ onSetupComplete }) => {
               <div className="flex flex-col gap-1">
                 <div className="text-[10px] text-slate-400 font-bold tracking-widest">COMMAND PROMPT (CMD)</div>
                 <div className="flex items-center justify-between bg-gunmetal-950 p-3 rounded border border-zinc-800">
-                  <code className="font-mono text-xs text-slate-300 select-all">certutil -hashfile blacksite-node.exe SHA256</code>
-                  <button onClick={() => handleCopy("certutil -hashfile blacksite-node.exe SHA256", setCopiedCmd)} className="p-2 hover:bg-zinc-800 rounded text-zinc-400 hover:text-emerald-400 transition-colors shrink-0" title="Copy CMD Command">
+                  <code className="font-mono text-xs text-slate-300 select-all">certutil -hashfile blacksite.exe SHA256</code>
+                  <button onClick={() => handleCopy("certutil -hashfile blacksite.exe SHA256", setCopiedCmd)} className="p-2 hover:bg-zinc-800 rounded text-zinc-400 hover:text-emerald-400 transition-colors shrink-0" title="Copy CMD Command">
                     {copiedCmd ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
                   </button>
                 </div>
@@ -223,8 +223,8 @@ export const SetupView: React.FC<SetupViewProps> = ({ onSetupComplete }) => {
               <div className="flex flex-col gap-1">
                 <div className="text-[10px] text-slate-400 font-bold tracking-widest">POWERSHELL</div>
                 <div className="flex items-center justify-between bg-gunmetal-950 p-3 rounded border border-zinc-800">
-                  <code className="font-mono text-xs text-slate-300 select-all">Get-FileHash -Path "blacksite-node.exe" -Algorithm SHA256</code>
-                  <button onClick={() => handleCopy('Get-FileHash -Path "blacksite-node.exe" -Algorithm SHA256', setCopiedPs)} className="p-2 hover:bg-zinc-800 rounded text-zinc-400 hover:text-emerald-400 transition-colors shrink-0" title="Copy PowerShell Command">
+                  <code className="font-mono text-xs text-slate-300 select-all">Get-FileHash -Path "blacksite.exe" -Algorithm SHA256</code>
+                  <button onClick={() => handleCopy('Get-FileHash -Path "blacksite.exe" -Algorithm SHA256', setCopiedPs)} className="p-2 hover:bg-zinc-800 rounded text-zinc-400 hover:text-emerald-400 transition-colors shrink-0" title="Copy PowerShell Command">
                     {copiedPs ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
                   </button>
                 </div>
@@ -237,8 +237,8 @@ export const SetupView: React.FC<SetupViewProps> = ({ onSetupComplete }) => {
                   Use a <strong className="text-slate-200">separate, internet-connected device</strong> to check the official repository release for <strong className="text-blue-active">v{appVersion}</strong>:
                 </p>
                 <div className="flex items-center gap-2 bg-gunmetal-950 p-2 rounded border border-zinc-800 w-fit">
-                  <span className="text-blue-active font-mono text-xs select-all">github.com/Matlih/Blacksite-Node/releases</span>
-                  <button onClick={() => handleCopy("github.com/Matlih/Blacksite-Node/releases", setCopiedLink)} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 hover:text-blue-active transition-colors shrink-0" title="Copy Link">
+                  <span className="text-blue-active font-mono text-xs select-all">github.com/Matlih/Blacksite/releases</span>
+                  <button onClick={() => handleCopy("github.com/Matlih/Blacksite/releases", setCopiedLink)} className="p-1 hover:bg-zinc-800 rounded text-zinc-400 hover:text-blue-active transition-colors shrink-0" title="Copy Link">
                     {copiedLink ? <Check size={14} className="text-blue-500" /> : <Copy size={14} />}
                   </button>
                 </div>
@@ -275,11 +275,11 @@ export const SetupView: React.FC<SetupViewProps> = ({ onSetupComplete }) => {
           <h2 className="text-lg tracking-widest uppercase text-slate-200 mb-6 flex items-center gap-2"><ShieldCheck size={20} className="text-emerald-500 animate-pulse-slow" /> LICENSE & AGREEMENTS</h2>
           
           <div className="bg-gunmetal-800 border border-ops-700 p-4 rounded h-96 overflow-y-auto text-xs text-slate-dim mb-6 space-y-4 font-mono">
-            <p className="font-bold text-slate-300 text-sm">BLACKSITE NODE - OFFLINE SOFTWARE LICENSE</p>
+            <p className="font-bold text-slate-300 text-sm">BLACKSITE - OFFLINE SOFTWARE LICENSE</p>
             <p>1. This software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement.</p>
             <p>2. The user assumes full, sovereign responsibility for their cryptographic keys. There is no password recovery, no cloud backup, and no backdoor.</p>
             <p>3. This application is designed to operate in entirely air-gapped or offline environments. You are responsible for ensuring the physical security of the device this software is executed on.</p>
-            <p>4. This application is Free Open Source Software (FOSS) Forever. You are granted rights to use, modify, and distribute this software for any noncommercial purpose as detailed in the PolyForm Noncommercial License below.</p>
+            <p>4. This application is Source-Available Software (SAS). You are granted rights to use, modify, and distribute this software for any noncommercial purpose as detailed in the PolyForm Noncommercial License below.</p>
             
             <div className="border-t border-ops-700 pt-4 mt-4">
               <p className="font-bold text-slate-300 mb-2">Copyright (c) 2026 Montazar Matlih</p>
@@ -476,9 +476,9 @@ export const SetupView: React.FC<SetupViewProps> = ({ onSetupComplete }) => {
       {/* Header bar */}
       <div className="flex items-center justify-between px-6 py-3 bg-gunmetal-800 border-b border-ops-700">
         <div className="flex items-center gap-3">
-          <img src="/app_logo.png" alt="Blacksite Node" className="h-6 w-auto object-contain" />
+          <img src="/app_logo.png" alt="Blacksite" className="h-6 w-auto object-contain" />
           <span className="text-xs uppercase tracking-widest text-slate-dim">
-            BLACKSITE NODE v{appVersion} — VAULT INITIALIZATION
+            BLACKSITE v{appVersion} — VAULT INITIALIZATION
           </span>
         </div>
         <div className="flex gap-4 items-center text-xs text-slate-label">
@@ -601,7 +601,7 @@ export const SetupView: React.FC<SetupViewProps> = ({ onSetupComplete }) => {
               value={confirmInput}
               onChange={(e) => setConfirmInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && !loading && handleConfirmSetup()}
-              placeholder="word1-word2-word3-..."
+              placeholder="absolute-privacy-absolute-freedom"
               className="input-ops mb-3 w-full"
               disabled={loading || phase === "confirming"}
               autoFocus spellCheck={false} autoComplete="off"

@@ -9,8 +9,7 @@ import { invoke } from "@tauri-apps/api/core";
 
 export interface PasswordHistoryEntry {
   password: string;
-  created_at: number;
-  retired_at: number;
+  changed_at: number;
 }
 
 export interface CredentialEntry {
@@ -23,6 +22,7 @@ export interface CredentialEntry {
   updated_at: number;
   password_history: PasswordHistoryEntry[];
   category?: string;
+  totp_secret?: string;
 }
 
 export interface NoteFolder {
@@ -100,9 +100,10 @@ export async function addCredential(
   username: string,
   password: string,
   notes: string,
-  category?: string
+  category?: string,
+  totpSecret?: string
 ): Promise<string> {
-  return await invoke("add_credential", { service, username, password, notes, category });
+  return await invoke("add_credential", { service, username, password, notes, category, totpSecret });
 }
 
 /** Edits a credential by ID, pushes old password to history if changed, and re-encrypts. */
@@ -112,9 +113,10 @@ export async function editCredential(
   username: string,
   password: string,
   notes: string,
-  category?: string
+  category?: string,
+  totpSecret?: string
 ): Promise<void> {
-  await invoke("edit_credential", { id, service, username, password, notes, category });
+  await invoke("edit_credential", { id, service, username, password, notes, category, totpSecret });
 }
 
 /** Removes a credential by ID and immediately re-encrypts. */
@@ -123,8 +125,8 @@ export async function deleteCredential(id: string): Promise<void> {
 }
 
 /** Deletes a password history entry for a given credential ID. */
-export async function deleteHistoryEntry(id: string, retiredAt: number): Promise<void> {
-  return invoke<void>("delete_history_entry", { id, retiredAt });
+export async function deleteHistoryEntry(id: string, changedAt: number): Promise<void> {
+  return invoke<void>("delete_history_entry", { id, changedAt });
 }
 
 // ---------------------------------------------------------------------------

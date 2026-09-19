@@ -1,4 +1,4 @@
-//! # crypto.rs — Blacksite Node Cryptographic Engine
+//! # crypto.rs — Blacksite Cryptographic Engine
 //!
 //! ## Threat Model
 //! This module assumes the attacker has:
@@ -142,6 +142,8 @@ pub struct CredentialEntry {
     pub password_history: Vec<PasswordHistoryEntry>,
     #[serde(default)]
     pub category: Option<String>,
+    #[serde(default)]
+    pub totp_secret: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Zeroize, ZeroizeOnDrop)]

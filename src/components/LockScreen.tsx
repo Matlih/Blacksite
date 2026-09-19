@@ -246,7 +246,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({
       <div className="flex items-center justify-between px-6 py-3 bg-gunmetal-800 border-b border-ops-700">
         <div className="flex items-center gap-3">
           <span className="text-xs uppercase tracking-widest text-slate-dim">
-            BLACKSITE NODE — AUTHENTICATION REQUIRED
+            BLACKSITE — AUTHENTICATION REQUIRED
           </span>
         </div>
         <div className={`text-xs uppercase ${isLocked ? "text-amber-warn" : "text-slate-label"}`}>
@@ -259,7 +259,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({
         <div className="mb-8 flex justify-center items-center">
           <img 
             src="/app_logo.png" 
-            alt="Blacksite Node" 
+            alt="Blacksite" 
             className={`w-24 h-24 object-contain transition-all duration-500 ${isLocked ? "grayscale opacity-50 drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]" : "drop-shadow-[0_0_15px_rgba(56,189,248,0.2)]"}`} 
           />
         </div>
@@ -275,7 +275,7 @@ export const LockScreen: React.FC<LockScreenProps> = ({
               value={passphrase}
               onChange={(e) => setPassphrase(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleUnlock()}
-              placeholder="word1-word2-word3-word4-word5"
+              placeholder="absolute-privacy-absolute-freedom"
               className="flex-1 bg-transparent outline-none text-slate-text text-sm font-mono placeholder:text-slate-label"
               disabled={loading || isLocked}
               autoFocus
