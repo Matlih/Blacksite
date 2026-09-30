@@ -526,9 +526,8 @@ Vault location    :  %APPDATA%\com.blacksite\vault.blacksite
 Built by Tauri's bundler as part of `npm run tauri build`. Outputs:
 
 ```
-src-tauri\target\x86_64-pc-windows-gnu\release\bundle\nsis\BLACKSITE_3.1.0_x64-setup.exe
-src-tauri\target\x86_64-pc-windows-gnu\release\bundle\msi\BLACKSITE_3.1.0_x64_en-US.msi
-```
+src-tauri\target\x86_64-pc-windows-gnu\release\bundle\nsis\Blacksite_3.1.0_x64_en-US.msi
+src-tauri\target\x86_64-pc-windows-gnu\release\bundle\msi\Blacksite_3.1.0_x64-setup.exe
 
 ---
 

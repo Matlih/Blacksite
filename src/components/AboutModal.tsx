@@ -55,7 +55,7 @@ export const AboutModal: React.FC<AboutModalProps> = ({ isOpen, onClose, appVers
           <div className="text-center space-y-1">
             <img src="/app_logo.png" alt="Blacksite" className="h-16 w-auto object-contain mx-auto mb-3 opacity-90" />
             <div className="text-xs text-zinc-500 font-mono">VERSION {appVersion}</div>
-            <div className="text-xs text-zinc-600 font-mono mt-1">BUILD DATE: 2026-09-19</div>
+            <div className="text-xs text-zinc-600 font-mono mt-1">BUILD DATE: 2026-09-30</div>
             <div className="text-xs text-ops-500 font-mono mt-2 uppercase tracking-widest">
               Developed By: Montazar Matlih (github.com/Matlih)
             </div>
