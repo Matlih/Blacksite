@@ -147,9 +147,13 @@ export const StegoExportModal: React.FC<StegoExportModalProps> = ({ isOpen, onCl
         clearInterval(interval);
       }
       
-      setExportProgress(100);
-      setFinalPath(destPath);
-      setExportComplete(true);
+              setExportProgress(100);
+        setFinalPath(destPath);
+        
+        // Wait 500ms so the user visually sees the progress bar hit 100%
+        setTimeout(() => {
+          setExportComplete(true);
+        }, 500);
       
     } catch (e) {
       setError(String(e));
