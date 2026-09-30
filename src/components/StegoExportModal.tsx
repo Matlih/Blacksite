@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { save as saveDialog, open as openDialog } from "@tauri-apps/plugin-dialog";
 import { exportVault, exportStegoVault } from "../lib/tauri";
 import { X, Image as ImageIcon, ShieldAlert, FileText, Upload, Check } from "lucide-react";
@@ -32,15 +32,6 @@ export const StegoExportModal: React.FC<StegoExportModalProps> = ({ isOpen, onCl
   const [animKey, setAnimKey] = useState(0);
   const [prevCoverMode, setPrevCoverMode] = useState<ExportMode | null>(null);
   const [isDecryptingCovers, setIsDecryptingCovers] = useState(false);
-
-  const blockThresholds = useMemo(() => {
-    const arr = Array.from({length: 100}, (_, i) => i + 1);
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  }, []);
 
   useEffect(() => {
     if (mode === "stego_lsb" || mode === "stego_eof") {
@@ -190,25 +181,27 @@ export const StegoExportModal: React.FC<StegoExportModalProps> = ({ isOpen, onCl
         {isExporting ? (
           <div className="p-10 flex flex-col items-center justify-center space-y-6">
             {!exportComplete ? (
-                <div className="w-full space-y-4 animate-in fade-in zoom-in duration-500">
-                  <div className="flex items-center justify-between text-emerald-500 font-mono text-xs font-bold tracking-widest">
-                    <span>CRYPTOGRAPHIC INJECTION</span>
-                    <span>{exportProgress}%</span>
-                  </div>
-                  
-                  <div className="grid grid-cols-10 gap-1 w-full bg-zinc-950 p-3 border border-zinc-800 rounded shadow-inner">
-                    {blockThresholds.map((threshold, idx) => {
-                      const isActive = exportProgress >= threshold;
-                      return (
-                        <div 
-                          key={idx}
-                          className={`aspect-square rounded-[1px] transition-all duration-200 ease-in-out ${isActive ? 'bg-emerald-500 shadow-[0_0_5px_rgba(16,185,129,0.5)]' : 'bg-zinc-900 border border-zinc-800/50'}`}
-                        />
-                      )
-                    })}
-                  </div>
+              <div className="w-full space-y-4 animate-in fade-in zoom-in duration-500">
+                <div className="flex items-center justify-between text-emerald-500 font-mono text-xs">
+                  <span>PROGRESSIVE DATA INJECTION</span>
+                  <span>{exportProgress}%</span>
                 </div>
-              ) : (
+                <div className="w-full h-2 bg-zinc-950 rounded-full overflow-hidden border border-zinc-800">
+                  <div 
+                    className="h-full bg-emerald-500 transition-all duration-200 ease-out"
+                    style={{ width: `${exportProgress}%` }}
+                  />
+                </div>
+                <div className="text-zinc-600 font-mono text-[10px] break-all overflow-hidden h-12 relative">
+                  {/* Fake cycling binary matrix effect */}
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="animate-pulse" style={{ animationDelay: `${i * 100}ms` }}>
+                      {Array.from({ length: 40 }).map(() => Math.random() > 0.5 ? '1' : '0').join('')}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
               <div className="w-full flex flex-col items-center justify-center space-y-6 animate-in fade-in zoom-in-95 duration-500">
                 <div className="h-16 w-16 bg-emerald-500/20 rounded-full flex items-center justify-center text-emerald-400 ring-1 ring-emerald-500/50 shadow-[0_0_30px_rgba(16,185,129,0.3)]">
                   <Check size={32} />
