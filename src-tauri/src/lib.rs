@@ -789,12 +789,18 @@ async fn get_app_version() -> Result<String, String> {
 // ---------------------------------------------------------------------------
 
 #[tauri::command]
-async fn export_vault(export_path: String, state: State<'_, VaultState>) -> Result<(), String> {
+async fn export_vault(export_path: String, state: State<'_, VaultState>, app: tauri::AppHandle) -> Result<(), String> {
     let app_state = state.lock().await;
     let session = app_state.session.as_ref().ok_or("Vault is locked.")?;
     
     if session.is_duress {
         return Err("Cannot export from a duress session.".to_string());
+    }
+
+    use tauri_plugin_fs::FsExt;
+    let path = std::path::PathBuf::from(&export_path);
+    if !app.fs_scope().is_allowed(&path) {
+        return Err("Path not allowed by FS scope.".to_string());
     }
 
     let salt_bytes = crate::crypto::read_vault_salt(&app_state.vault_path)
@@ -803,10 +809,10 @@ async fn export_vault(export_path: String, state: State<'_, VaultState>) -> Resu
     let copy_len = salt_bytes.len().min(16);
     salt[..copy_len].copy_from_slice(&salt_bytes[..copy_len]);
 
-    encrypt_vault(
+    crate::crypto::encrypt_vault(
         &session.vault_data,
         &session.master_key,
-        &std::path::PathBuf::from(export_path),
+        &path,
         &salt,
         None, // No duress blob in exported file
     )?;
@@ -824,12 +830,39 @@ async fn export_stego_vault(
     dest_path: String,
     mode: String, // "eof" or "lsb"
     state: State<'_, VaultState>,
+    app: tauri::AppHandle,
 ) -> Result<(), String> {
     let app_state = state.lock().await;
     let session = app_state.session.as_ref().ok_or("Vault is locked.")?;
     
     if session.is_duress {
         return Err("Cannot export from a duress session.".to_string());
+    }
+
+    use tauri_plugin_fs::FsExt;
+    let carrier = std::path::PathBuf::from(&carrier_path);
+    let dest = std::path::PathBuf::from(&dest_path);
+    
+    let mut carrier_allowed = app.fs_scope().is_allowed(&carrier);
+    
+    // Secure fallback for pre-installed covers written to the OS temporary directory
+    if !carrier_allowed {
+        if let (Ok(canon_carrier), Ok(temp_dir)) = (carrier.canonicalize(), std::env::temp_dir().canonicalize()) {
+            if canon_carrier.starts_with(&temp_dir) {
+                if let Some(name) = canon_carrier.file_name().and_then(|n| n.to_str()) {
+                    if name.starts_with("blacksite_temp_carrier_") {
+                        carrier_allowed = true;
+                    }
+                }
+            }
+        }
+    }
+
+    if !carrier_allowed {
+        return Err("Carrier path not allowed by FS scope.".to_string());
+    }
+    if !app.fs_scope().is_allowed(&dest) {
+        return Err("Destination path not allowed by FS scope.".to_string());
     }
 
     let temp_dir = std::env::temp_dir();
@@ -841,7 +874,7 @@ async fn export_stego_vault(
     let copy_len = salt_bytes.len().min(16);
     salt[..copy_len].copy_from_slice(&salt_bytes[..copy_len]);
 
-    encrypt_vault(
+    crate::crypto::encrypt_vault(
         &session.vault_data,
         &session.master_key,
         &temp_path,
@@ -851,9 +884,6 @@ async fn export_stego_vault(
 
     let payload = std::fs::read(&temp_path).map_err(|e| format!("Failed to read temp vault: {}", e))?;
     let _ = std::fs::remove_file(&temp_path);
-
-    let carrier = std::path::PathBuf::from(carrier_path);
-    let dest = std::path::PathBuf::from(dest_path);
 
     if mode == "lsb" {
         crate::stego::embed_lsb(&carrier, &dest, &payload).map_err(|e| format!("LSB Steganography failed: {}", e))?;
@@ -873,15 +903,21 @@ async fn import_vault(
     import_path: String,
     old_passphrase: String,
     state: State<'_, VaultState>,
+    app: tauri::AppHandle,
 ) -> Result<(), String> {
-    let path = std::path::PathBuf::from(import_path);
-    if !vault_exists(&path) {
+    use tauri_plugin_fs::FsExt;
+    let path = std::path::PathBuf::from(&import_path);
+    if !app.fs_scope().is_allowed(&path) {
+        return Err("Path not allowed by FS scope.".to_string());
+    }
+
+    if !crate::crypto::vault_exists(&path) {
         return Err("Export file not found.".to_string());
     }
 
-    let salt = read_vault_salt(&path)?;
-    let old_key = derive_key(&old_passphrase, &salt)?;
-    let imported_vault = decrypt_vault(&old_key, &path)?;
+    let salt = crate::crypto::read_vault_salt(&path)?;
+    let old_key = crate::crypto::derive_key(&old_passphrase, &salt)?;
+    let imported_vault = crate::crypto::decrypt_vault(&old_key, &path)?;
 
     let mut app_state = state.lock().await;
     let session = app_state.session.as_mut().ok_or("Vault is locked.")?;
@@ -926,14 +962,14 @@ async fn import_vault(
     }
 
     // Re-encrypt the current vault
-    let salt_bytes = read_vault_salt(&app_state.vault_path)?;
+    let salt_bytes = crate::crypto::read_vault_salt(&app_state.vault_path)?;
     let mut salt_arr = [0u8; 16];
     let copy_len = salt_bytes.len().min(16);
     salt_arr[..copy_len].copy_from_slice(&salt_bytes[..copy_len]);
 
     let duress_blob = app_state.duress_blob.clone();
     let session = app_state.session.as_ref().unwrap();
-    encrypt_vault(
+    crate::crypto::encrypt_vault(
         &session.vault_data,
         &session.master_key,
         &app_state.vault_path,
@@ -977,8 +1013,13 @@ async fn import_stego_vault(
     old_passphrase: String,
     mode: String, // "eof" or "lsb"
     state: State<'_, VaultState>,
+    app: tauri::AppHandle,
 ) -> Result<(), String> {
+    use tauri_plugin_fs::FsExt;
     let source = std::path::PathBuf::from(&source_path);
+    if !app.fs_scope().is_allowed(&source) {
+        return Err("Source path not allowed by FS scope.".to_string());
+    }
 
     let payload = if mode == "lsb" {
         crate::stego::extract_lsb(&source).map_err(|e| format!("LSB Extraction failed: {}", e))?
@@ -990,9 +1031,9 @@ async fn import_stego_vault(
     let temp_path = temp_dir.join(format!("blacksite_stego_import_{}.tmp", rand::random::<u32>()));
     std::fs::write(&temp_path, &payload).map_err(|e| format!("Failed to write temp vault: {}", e))?;
 
-    let salt = read_vault_salt(&temp_path).map_err(|e| { let _ = std::fs::remove_file(&temp_path); e.to_string() })?;
-    let old_key = derive_key(&old_passphrase, &salt).map_err(|e| { let _ = std::fs::remove_file(&temp_path); e.to_string() })?;
-    let imported_vault = decrypt_vault(&old_key, &temp_path).map_err(|e| { let _ = std::fs::remove_file(&temp_path); e.to_string() })?;
+    let salt = crate::crypto::read_vault_salt(&temp_path).map_err(|e| { let _ = std::fs::remove_file(&temp_path); e.to_string() })?;
+    let old_key = crate::crypto::derive_key(&old_passphrase, &salt).map_err(|e| { let _ = std::fs::remove_file(&temp_path); e.to_string() })?;
+    let imported_vault = crate::crypto::decrypt_vault(&old_key, &temp_path).map_err(|e| { let _ = std::fs::remove_file(&temp_path); e.to_string() })?;
     let _ = std::fs::remove_file(&temp_path);
 
     let mut app_state = state.lock().await;
@@ -1037,12 +1078,12 @@ async fn import_stego_vault(
         session.vault_data.notes.push(imported_note);
     }
 
-    let salt_bytes = read_vault_salt(&vault_path)?;
+    let salt_bytes = crate::crypto::read_vault_salt(&vault_path)?;
     let mut salt_arr = [0u8; 16];
     let copy_len = salt_bytes.len().min(16);
     salt_arr[..copy_len].copy_from_slice(&salt_bytes[..copy_len]);
 
-    encrypt_vault(
+    crate::crypto::encrypt_vault(
         &session.vault_data,
         &session.master_key,
         &vault_path,
@@ -1144,3 +1185,5 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+

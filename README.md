@@ -8,9 +8,9 @@
 ```
 CLASSIFICATION : PERSONAL SECURITY INFRASTRUCTURE
 ARCHITECTURE   : Tauri v2 · Rust · React · TypeScript · Vite · TailwindCSS
-CIPHER SUITE   : Argon2id · ChaCha20-Poly1305 · OsRng CSPRNG
+CIPHER SUITE   : Argon2id · XChaCha20-Poly1305 · OsRng CSPRNG
 STORAGE        : Single encrypted .blacksite file — zero cloud, zero sync, zero trust
-VERSION        : v3.0.0
+VERSION        : v3.1.0
 ```
 
 <div align="center">
@@ -87,7 +87,7 @@ BLACKSITE is a fully offline, zero-knowledge password manager and secure notepad
 
 BLACKSITE strictly adheres to **Kerckhoffs's Principle**: *The security of a cryptographic system shouldn't rely on the secrecy of the algorithm.* Even if everything about the system, except the key, is public knowledge.
 
-Our entire architecture, cryptographic flow, and source code are 100% transparent and source-available. The security of your vault relies entirely on the mathematical strength of ChaCha20-Poly1305 and Argon2id, not on "security through obscurity."
+Our entire architecture, cryptographic flow, and source code are 100% transparent and source-available. The security of your vault relies entirely on the mathematical strength of XChaCha20-Poly1305 and Argon2id, not on "security through obscurity."
 
 The frontend is treated as an **untrusted display layer**. It never handles raw key material, never makes cryptographic decisions, and never sees plaintext outside of an active unlocked session. All security logic — key derivation, encryption, decryption, rate limiting, duress detection — is implemented exclusively in Rust.
 
@@ -102,10 +102,10 @@ The vault file (`vault.blacksite`) contains:
   "magic":              "BLACKSITE_NODE_v1",
   "version":            1,
   "salt":               "<base64, 16 bytes, random per vault>",
-  "nonce":              "<base64, 12 bytes, random per write>",
-  "ciphertext":         "<base64, ChaCha20-Poly1305 AEAD output>",
+  "nonce":              "<base64, 24 bytes, random per write>",
+  "ciphertext":         "<base64, XChaCha20-Poly1305 AEAD output>",
   "duress_salt":        "<base64, 16 bytes>",
-  "duress_nonce":       "<base64, 12 bytes>",
+  "duress_nonce":       "<base64, 24 bytes>",
   "duress_ciphertext":  "<base64, canary-key encrypted empty vault>"
 }
 ```
@@ -175,7 +175,7 @@ The rate limiter operates as a complement to Argon2id, not a replacement. Combin
 
 BLACKSITE exclusively exports to encrypted formats to prevent accidental plaintext data leakage to the local filesystem. All vault exports are saved in `.bsx` (Blacksite Export) format. 
 
-A `.bsx` file is identical in structure to the main `vault.blacksite` file. It is a full ChaCha20-Poly1305 encrypted JSON blob. Because of this, every `.bsx` file inherits the vault's strict **Tamper Detection (Poly1305 MAC Verification)**. If a single bit of the export file is altered or corrupted during transit, the authentication tag mathematically fails and the app refuses to decrypt it.
+A `.bsx` file is identical in structure to the main `vault.blacksite` file. It is a full XChaCha20-Poly1305 encrypted JSON blob. Because of this, every `.bsx` file inherits the vault's strict **Tamper Detection (Poly1305 MAC Verification)**. If a single bit of the export file is altered or corrupted during transit, the authentication tag mathematically fails and the app refuses to decrypt it.
 
 When importing a `.bsx` file on a new device, the user must provide the exact master passphrase used at the time the export was created. The Rust backend temporarily derives the old Argon2id key in memory, decrypts the `.bsx` payload, merges the entries into the active session, and immediately zeroizes the temporary key. The imported data is never written to disk until the active session is securely flushed using the current session's encryption key.
 
@@ -263,7 +263,7 @@ Algorithm   :  Argon2id  (RFC 9106)
 Memory cost :  65,536 KiB  (64 MiB per attempt)
 Iterations  :  3 passes
 Parallelism :  1 lane
-Output      :  256 bits  (ChaCha20-Poly1305 key)
+Output      :  256 bits  (XChaCha20-Poly1305 key)
 ```
 
 The 64 MiB memory requirement is the critical constraint. GPU-based cracking derives its speed from massive parallelism — thousands of cores running simultaneously. At 64 MiB per attempt, a GPU with 10 GB VRAM can sustain approximately **156 parallel derivations**. Each derivation takes roughly 300-800 ms on commodity hardware.
@@ -476,7 +476,7 @@ src-tauri\target\x86_64-pc-windows-gnu\release\blacksite.exe
 |---|---|
 | Passphrase storage | Never stored. Derived on demand, zeroized on lock. |
 | Key in memory | `ZeroizeOnDrop` — 32 bytes overwritten with zeros on drop. |
-| Vault encryption | ChaCha20-Poly1305 AEAD, 256-bit key, random 96-bit nonce per write. |
+| Vault encryption | XChaCha20-Poly1305 AEAD, 256-bit key, random 192-bit nonce per write. |
 | Key derivation | Argon2id, 64 MiB / 3 iterations / 1 lane. |
 | Nonce reuse | Impossible — OsRng generates a fresh nonce for every `encrypt_vault()` call. |
 | Tamper detection | Poly1305 MAC verified before any plaintext is released. Magic header verification. |
@@ -526,8 +526,8 @@ Vault location    :  %APPDATA%\com.blacksite\vault.blacksite
 Built by Tauri's bundler as part of `npm run tauri build`. Outputs:
 
 ```
-src-tauri\target\x86_64-pc-windows-gnu\release\bundle\nsis\BLACKSITE_2.0.0_x64-setup.exe
-src-tauri\target\x86_64-pc-windows-gnu\release\bundle\msi\BLACKSITE_2.0.0_x64_en-US.msi
+src-tauri\target\x86_64-pc-windows-gnu\release\bundle\nsis\BLACKSITE_3.1.0_x64-setup.exe
+src-tauri\target\x86_64-pc-windows-gnu\release\bundle\msi\BLACKSITE_3.1.0_x64_en-US.msi
 ```
 
 ---

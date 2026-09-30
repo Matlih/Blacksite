@@ -14,7 +14,7 @@
 //! 2. **ChaCha20-Poly1305 AEAD**: authenticated encryption. Any tampering with the ciphertext
 //!    is detected before decryption. Prevents the attacker from learning plaintext structure
 //!    via chosen-ciphertext attacks.
-//! 3. **Random 96-bit nonces**: unique per encryption. Nonce reuse with ChaCha20-Poly1305
+//! 3. **Random 96-bit nonces**: unique per encryption. nonce reuse with ChaCha20-Poly1305
 //!    is catastrophic (leaks keystream), so the OS CSPRNG is used here — never a counter.
 //! 4. **Zeroize on drop**: the `MasterKey` type overwrites its heap memory with zeros when
 //!    dropped, preventing key extraction via memory forensics on a running process.
@@ -22,7 +22,7 @@
 use argon2::{Algorithm, Argon2, Params, Version};
 use chacha20poly1305::{
     aead::{Aead, KeyInit},
-    ChaCha20Poly1305, Nonce,
+    ChaCha20Poly1305, Nonce, XChaCha20Poly1305, XNonce,
 };
 use rand::{rngs::OsRng, RngCore};
 use serde::{Deserialize, Serialize};
@@ -60,9 +60,7 @@ const KEY_LEN: usize = 32;
 /// vault. The salt prevents precomputed rainbow-table attacks across vaults.
 const SALT_LEN: usize = 16;
 
-/// ChaCha20-Poly1305 nonce length: 96 bits. A fresh random nonce is generated
-/// for every encryption operation.
-const NONCE_LEN: usize = 12;
+const NONCE_LEN: usize = 24;
 
 // ---------------------------------------------------------------------------
 // Duress (canary) blob — zeroize-safe static container
@@ -74,7 +72,7 @@ const NONCE_LEN: usize = 12;
 #[derive(Clone)]
 pub struct DuressBlob {
     pub salt: [u8; SALT_LEN],
-    pub nonce: [u8; NONCE_LEN],
+    pub nonce: Vec<u8>,
     pub ciphertext: Vec<u8>,
 }
 
@@ -346,10 +344,10 @@ pub fn encrypt_vault(
     // Generate fresh random nonce — NEVER reuse a nonce with the same key
     let mut nonce_bytes = [0u8; NONCE_LEN];
     OsRng.fill_bytes(&mut nonce_bytes);
-    let nonce = Nonce::from_slice(&nonce_bytes);
+    let nonce = XNonce::from_slice(&nonce_bytes);
 
     // Construct cipher from derived key
-    let cipher = ChaCha20Poly1305::new_from_slice(&master_key.bytes)
+    let cipher = XChaCha20Poly1305::new_from_slice(&master_key.bytes)
         .map_err(|e| format!("Cipher init error: {e}"))?;
 
     // Encrypt + authenticate. The 16-byte Poly1305 tag is appended to ciphertext.
@@ -413,15 +411,21 @@ pub fn decrypt_vault(
     let ciphertext = base64_decode(&vault_file.ciphertext)
         .map_err(|_| "Vault ciphertext decode error.".to_string())?;
 
-    let nonce = Nonce::from_slice(&nonce_bytes);
-
-    let cipher = ChaCha20Poly1305::new_from_slice(&master_key.bytes)
-        .map_err(|e| format!("Cipher init error: {e}"))?;
-
-    // Decrypt + verify MAC. Failure here means wrong key OR tampered ciphertext.
-    let plaintext = cipher
-        .decrypt(nonce, ciphertext.as_ref())
-        .map_err(|_| "Decryption failed. Wrong passphrase or corrupted vault.".to_string())?;
+    let plaintext = if nonce_bytes.len() == 12 {
+        let nonce = Nonce::from_slice(&nonce_bytes);
+        let cipher = ChaCha20Poly1305::new_from_slice(&master_key.bytes)
+            .map_err(|e| format!("Cipher init error: {e}"))?;
+        cipher.decrypt(nonce, ciphertext.as_ref())
+            .map_err(|_| "Decryption failed. Wrong passphrase or corrupted vault.".to_string())?
+    } else if nonce_bytes.len() == 24 {
+        let nonce = XNonce::from_slice(&nonce_bytes);
+        let cipher = XChaCha20Poly1305::new_from_slice(&master_key.bytes)
+            .map_err(|e| format!("Cipher init error: {e}"))?;
+        cipher.decrypt(nonce, ciphertext.as_ref())
+            .map_err(|_| "Decryption failed. Wrong passphrase or corrupted vault.".to_string())?
+    } else {
+        return Err("Invalid nonce length.".to_string());
+    };
 
     let vault_data: VaultData = serde_json::from_slice(&plaintext)
         .map_err(|e| format!("Vault parse error: {e}"))?;
@@ -504,9 +508,9 @@ pub fn create_duress_blob(canary_passphrase: &str, salt: &[u8; SALT_LEN]) -> Res
 
     let mut nonce_bytes = [0u8; NONCE_LEN];
     OsRng.fill_bytes(&mut nonce_bytes);
-    let nonce = Nonce::from_slice(&nonce_bytes);
+    let nonce = XNonce::from_slice(&nonce_bytes);
 
-    let cipher = ChaCha20Poly1305::new_from_slice(&key.bytes)
+    let cipher = XChaCha20Poly1305::new_from_slice(&key.bytes)
         .map_err(|e| format!("Cipher init error: {e}"))?;
 
     let ciphertext = cipher
@@ -515,7 +519,7 @@ pub fn create_duress_blob(canary_passphrase: &str, salt: &[u8; SALT_LEN]) -> Res
 
     Ok(DuressBlob {
         salt: *salt,
-        nonce: nonce_bytes,
+        nonce: nonce_bytes.to_vec(),
         ciphertext,
     })
 }
@@ -534,16 +538,11 @@ pub fn read_duress_blob(vault_path: &PathBuf) -> Option<DuressBlob> {
     let nonce_bytes = base64_decode(&nonce_b64).ok()?;
     let ciphertext = base64_decode(&ct_b64).ok()?;
 
-    if salt_bytes.len() != SALT_LEN || nonce_bytes.len() != NONCE_LEN {
-        return None;
-    }
+    if salt_bytes.len() != SALT_LEN || (nonce_bytes.len() != 12 && nonce_bytes.len() != 24) { return None; }
 
     let mut salt = [0u8; SALT_LEN];
     salt.copy_from_slice(&salt_bytes);
-    let mut nonce = [0u8; NONCE_LEN];
-    nonce.copy_from_slice(&nonce_bytes);
-
-    Some(DuressBlob { salt, nonce, ciphertext })
+    Some(DuressBlob { salt, nonce: nonce_bytes, ciphertext })
 }
 
 /// Checks whether the given passphrase is the duress/canary key for this vault.
@@ -566,13 +565,24 @@ pub fn try_decrypt_duress(passphrase: &str, vault_path: &PathBuf) -> Result<bool
     let ciphertext = base64_decode(&dc).map_err(|_| "Duress ciphertext decode error.".to_string())?;
 
     let key = derive_key(passphrase, &salt_bytes)?;
-    let nonce = Nonce::from_slice(&nonce_bytes);
-    let cipher = ChaCha20Poly1305::new_from_slice(&key.bytes)
-        .map_err(|e| format!("Cipher init error: {e}"))?;
-
-    match cipher.decrypt(nonce, ciphertext.as_ref()) {
-        Ok(_) => Ok(true),
-        Err(_) => Ok(false),
+    if nonce_bytes.len() == 12 {
+        let nonce = Nonce::from_slice(&nonce_bytes);
+        let cipher = ChaCha20Poly1305::new_from_slice(&key.bytes)
+            .map_err(|e| format!("Cipher init error: {e}"))?;
+        match cipher.decrypt(nonce, ciphertext.as_ref()) {
+            Ok(_) => Ok(true),
+            Err(_) => Ok(false),
+        }
+    } else if nonce_bytes.len() == 24 {
+        let nonce = XNonce::from_slice(&nonce_bytes);
+        let cipher = XChaCha20Poly1305::new_from_slice(&key.bytes)
+            .map_err(|e| format!("Cipher init error: {e}"))?;
+        match cipher.decrypt(nonce, ciphertext.as_ref()) {
+            Ok(_) => Ok(true),
+            Err(_) => Ok(false),
+        }
+    } else {
+        Ok(false)
     }
 }
 

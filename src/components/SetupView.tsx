@@ -31,6 +31,13 @@ export const SetupView: React.FC<SetupViewProps> = ({ onSetupComplete }) => {
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [wantsToImport, setWantsToImport] = useState(false);
 
+  const [showFinalConfirmModal, setShowFinalConfirmModal] = useState(false);
+  const [finalTimer, setFinalTimer] = useState(3);
+
+  const [verifyTimer, setVerifyTimer] = useState(5);
+  const [warningTimer, setWarningTimer] = useState(5);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+
   const [wordCount, setWordCount] = useState<number>(6);
   const [languages, setLanguages] = useState<string[]>(["english"]);
 
@@ -40,6 +47,27 @@ export const SetupView: React.FC<SetupViewProps> = ({ onSetupComplete }) => {
   useEffect(() => {
     getAppVersion().then(setAppVersion).catch(console.error);
   }, []);
+
+  useEffect(() => {
+    if (phase === "verify" && verifyTimer > 0) {
+      const t = setTimeout(() => setVerifyTimer(prev => prev - 1), 1000);
+      return () => clearTimeout(t);
+    }
+  }, [phase, verifyTimer]);
+
+  useEffect(() => {
+    if (showWarningModal && warningTimer > 0) {
+      const t = setTimeout(() => setWarningTimer(prev => prev - 1), 1000);
+      return () => clearTimeout(t);
+    }
+  }, [showWarningModal, warningTimer]);
+
+  useEffect(() => {
+    if (showFinalConfirmModal && finalTimer > 0) {
+      const t = setTimeout(() => setFinalTimer(prev => prev - 1), 1000);
+      return () => clearTimeout(t);
+    }
+  }, [showFinalConfirmModal, finalTimer]);
 
   const loadPassphrases = useCallback(async () => {
     setLoading(true);
@@ -79,6 +107,12 @@ export const SetupView: React.FC<SetupViewProps> = ({ onSetupComplete }) => {
       setError("Passphrase mismatch. Re-check your written copy and try again.");
       return;
     }
+    setShowFinalConfirmModal(true);
+    setFinalTimer(3);
+  };
+
+  const executeSetup = async () => {
+    setShowFinalConfirmModal(false);
     setPhase("confirming");
     setError("");
     setLoading(true);
@@ -258,8 +292,12 @@ export const SetupView: React.FC<SetupViewProps> = ({ onSetupComplete }) => {
             <button className="text-slate-500 hover:text-slate-300 text-xs tracking-widest uppercase font-bold" onClick={() => setPhase("welcome")}>
               Go Back
             </button>
-            <button className="btn-primary" onClick={() => setPhase("terms")}>
-              I HAVE VERIFIED THE SHA256 HASH
+            <button 
+              className={`btn-primary ${verifyTimer > 0 ? 'opacity-50 cursor-not-allowed' : ''}`} 
+              disabled={verifyTimer > 0} 
+              onClick={() => setPhase("terms")}
+            >
+              {verifyTimer > 0 ? `I HAVE VERIFIED THE SHA256 HASH (${verifyTimer}s)` : "I HAVE VERIFIED THE SHA256 HASH"}
             </button>
           </div>
         </div>
@@ -274,7 +312,15 @@ export const SetupView: React.FC<SetupViewProps> = ({ onSetupComplete }) => {
         <div className="panel-ops p-8 w-full max-w-3xl z-10 animate-in slide-in-from-right-8">
           <h2 className="text-lg tracking-widest uppercase text-slate-200 mb-6 flex items-center gap-2"><ShieldCheck size={20} className="text-emerald-500 animate-pulse-slow" /> LICENSE & AGREEMENTS</h2>
           
-          <div className="bg-gunmetal-800 border border-ops-700 p-4 rounded h-96 overflow-y-auto text-xs text-slate-dim mb-6 space-y-4 font-mono">
+          <div 
+            className="bg-gunmetal-800 border border-ops-700 p-4 rounded h-96 overflow-y-auto text-xs text-slate-dim mb-6 space-y-4 font-mono"
+            onScroll={(e) => {
+              const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+              if (scrollHeight - scrollTop <= clientHeight + 50) {
+                setHasScrolledToBottom(true);
+              }
+            }}
+          >
             <p className="font-bold text-slate-300 text-sm">BLACKSITE - OFFLINE SOFTWARE LICENSE</p>
             <p>1. This software is provided "as is", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement.</p>
             <p>2. The user assumes full, sovereign responsibility for their cryptographic keys. There is no password recovery, no cloud backup, and no backdoor.</p>
@@ -338,16 +384,18 @@ export const SetupView: React.FC<SetupViewProps> = ({ onSetupComplete }) => {
 
 
 
-          <div className="flex items-center gap-3 mb-8">
+          <div className="flex items-start gap-3 mb-8">
             <input 
               type="checkbox" 
               id="verify-hash"
               checked={termsAccepted}
               onChange={(e) => setTermsAccepted(e.target.checked)}
-              className="w-4 h-4 accent-emerald-500 cursor-pointer"
+              disabled={!hasScrolledToBottom}
+              className={`w-4 h-4 accent-emerald-500 mt-0.5 ${!hasScrolledToBottom ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             />
-            <label htmlFor="verify-hash" className="text-sm text-slate-300 cursor-pointer select-none">
+            <label htmlFor="verify-hash" className={`text-sm select-none ${hasScrolledToBottom ? 'text-slate-300 cursor-pointer' : 'text-slate-500 cursor-not-allowed'}`}>
               I have read and agree to the software license, and accept full responsibility for my cryptographic keys.
+              {!hasScrolledToBottom && <span className="block text-amber-warn mt-1 text-xs">Please scroll to the bottom of the license to agree.</span>}
             </label>
           </div>
 
@@ -456,6 +504,30 @@ export const SetupView: React.FC<SetupViewProps> = ({ onSetupComplete }) => {
 
   return (
     <div className="flex flex-col h-full bg-gunmetal-900 text-slate-text font-mono relative">
+      {showFinalConfirmModal && (
+        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-gunmetal-900/90 backdrop-blur-md p-8">
+          <div className="panel-ops p-8 max-w-lg w-full text-center border-red-500/50 animate-in zoom-in-95 duration-200">
+            <Skull size={40} className="text-red-500 mx-auto mb-4 animate-pulse" />
+            <h2 className="text-xl tracking-widest uppercase text-red-500 mb-4 font-bold">POINT OF NO RETURN</h2>
+            <p className="text-sm text-slate-300 leading-relaxed mb-6 font-mono">
+              By proceeding, the cryptographic keys will be permanently fused to this vault.<br /><br />
+              If you lose these keys, <strong className="text-red-400">YOUR DATA IS GONE.</strong>
+            </p>
+            <div className="flex gap-4">
+              <button onClick={() => setShowFinalConfirmModal(false)} className="btn-ghost flex-1 border border-zinc-600 hover:border-slate-400 text-slate-400">
+                GO BACK
+              </button>
+              <button 
+                onClick={executeSetup} 
+                disabled={finalTimer > 0}
+                className={`btn-primary flex-1 border-red-500 text-red-500 ${finalTimer === 0 ? 'hover:bg-red-500 hover:text-gunmetal-900' : 'opacity-50 cursor-not-allowed'}`}
+              >
+                {finalTimer > 0 ? `INITIALIZE (${finalTimer}s)` : "INITIALIZE"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showWarningModal && phase === "generate" && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-gunmetal-900/80 backdrop-blur-sm p-8">
           <div className="panel-ops p-8 max-w-lg w-full text-center border-amber-warn/50 animate-in zoom-in-95 duration-200">
@@ -463,10 +535,14 @@ export const SetupView: React.FC<SetupViewProps> = ({ onSetupComplete }) => {
             <h2 className="text-lg tracking-widest uppercase text-amber-warn mb-4 font-bold">WARNING: NO RECOVERY</h2>
             <p className="text-sm text-slate-300 leading-relaxed mb-6 font-mono">
               Take note of your keys, there are no recoveries.<br />
-              Your greatest security storage is your brain... and perhaps a piece of paper.
+              Your most secured storage is your brain... and perhaps a piece of paper.
             </p>
-            <button onClick={() => setShowWarningModal(false)} className="btn-primary w-full border-amber-warn text-amber-warn hover:bg-amber-warn hover:text-gunmetal-900">
-              I UNDERSTAND
+            <button 
+              onClick={() => setShowWarningModal(false)} 
+              disabled={warningTimer > 0}
+              className={`btn-primary w-full border-amber-warn text-amber-warn ${warningTimer === 0 ? 'hover:bg-amber-warn hover:text-gunmetal-900' : 'opacity-50 cursor-not-allowed'}`}
+            >
+              {warningTimer > 0 ? `I UNDERSTAND (${warningTimer}s)` : "I UNDERSTAND"}
             </button>
           </div>
         </div>

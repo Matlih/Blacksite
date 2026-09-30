@@ -1,7 +1,7 @@
 {
   "name": "blacksite",
   "private": true,
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Blacksite - Sovereign Vault (SAS)",
   "type": "module",
   "scripts": {
@@ -30,6 +30,6 @@
     "tailwindcss": "^3.4.19",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "~5.8.3",
-    "vite": "^7.0.4"
+    "vite": "^7.3.4"
   }
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { save as saveDialog, open as openDialog } from "@tauri-apps/plugin-dialog";
 import { exportVault, exportStegoVault } from "../lib/tauri";
 import { X, Image as ImageIcon, ShieldAlert, FileText, Upload, Check } from "lucide-react";
@@ -32,6 +32,15 @@ export const StegoExportModal: React.FC<StegoExportModalProps> = ({ isOpen, onCl
   const [animKey, setAnimKey] = useState(0);
   const [prevCoverMode, setPrevCoverMode] = useState<ExportMode | null>(null);
   const [isDecryptingCovers, setIsDecryptingCovers] = useState(false);
+
+  const blockThresholds = useMemo(() => {
+    const arr = Array.from({length: 100}, (_, i) => i + 1);
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, []);
 
   useEffect(() => {
     if (mode === "stego_lsb" || mode === "stego_eof") {
@@ -137,8 +146,11 @@ export const StegoExportModal: React.FC<StegoExportModalProps> = ({ isOpen, onCl
 
         // Start progressive data injection animation
         const interval = setInterval(() => {
-          setExportProgress(p => p >= 95 ? 95 : p + Math.floor(Math.random() * 15) + 5);
-        }, 150);
+          setExportProgress(p => {
+            const next = p + Math.floor(Math.random() * 8) + 2;
+            return next > 95 ? 95 : next;
+          });
+        }, 200);
 
         await exportStegoVault(carrierPath, destPath, mode === "stego_lsb" ? "lsb" : "eof");
         clearInterval(interval);
